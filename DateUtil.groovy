@@ -110,4 +110,14 @@ public class DateUtil extends ExtendM3Utility {
 			return false;
 		}
 	}
+
+	/**
+	 * Check if date is valid
+	 * @param date Date to check in Long format
+	 * @param format Format of the date
+	 * @return {@code true} if date is valid
+	 */
+	public boolean isDateValid(Long date, String format) {
+		return isDateValid(date.toString(), format);
+	}
 }
