@@ -12,15 +12,13 @@ public class UpdError extends ExtendM3Transaction {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
-	private final LoggerAPI logger;
 
-	public UpdError(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller, LoggerAPI logger) {
+	public UpdError(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
 		this.program = program;
 		this.database = database;
 		this.utility = utility;
 		this.miCaller = miCaller;
-		this.logger = logger;
 	}
 
 	public void main() {
