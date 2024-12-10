@@ -33,6 +33,8 @@ public class ChangeSCHN extends ExtendM3Transaction {
 		if(!checkInputs(CONO, FACI, OPNO, SCHP, SCHN))
 			return;
 
+		int pagesize = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000 ? 10000: mi.getMaxRecords();
+
 		ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 		mwoopeExpressionFactory = mwoopeExpressionFactory.ge("VOOPNO", OPNO.toString()).and(mwoopeExpressionFactory.eq("MFNO", MFNO));
 
@@ -65,21 +67,21 @@ public class ChangeSCHN extends ExtendM3Transaction {
 			Closure<?>emptyClosure= { DBContainer MWOMATdata ->
 			}
 
-			if(checkWOMAT.readAll(mwomatContainer,5, emptyClosure) > 0) {
-				this.mi.error("At Least One component is PL handled");
+			if(checkWOMAT.readAll(mwomatContainer,5, pagesize, emptyClosure) > 0) {
+				mi.error("At Least One component is PL handled");
 				hadError = true;
 				return;
 			}
 
 		}
 
-		mwoopeRecord.readAll(mwoopeContainer, 3, CheckStatusClosure);
+		mwoopeRecord.readAll(mwoopeContainer, 3, pagesize, CheckStatusClosure);
 
 		if(hadError)
 			return;
 
 		Closure<?> updateClosure = { DBContainer MWOOPEdata ->
-			DBAction update = this.database.table("MWOOPE").index("00").build();
+			DBAction update = database.table("MWOOPE").index("00").build();
 			DBContainer mwoopeUpdateContainer = update.createContainer();
 			mwoopeUpdateContainer.set("VOCONO", MWOOPEdata.get("VOCONO"));
 			mwoopeUpdateContainer.set("VOFACI", MWOOPEdata.get("VOFACI"));
@@ -90,8 +92,8 @@ public class ChangeSCHN extends ExtendM3Transaction {
 			update.readLock(mwoopeUpdateContainer,{LockedResult updatedRecord ->
 				String CHNO = updatedRecord.get("VOCHNO").toString();
 				if(CHNO.equals("999")) {CHNO = "0";}
-				updatedRecord.set("VOLMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-				updatedRecord.set("VOCHID", this.program.getUser());
+				updatedRecord.set("VOLMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+				updatedRecord.set("VOCHID", program.getUser());
 				updatedRecord.set("VOCHNO", Integer.parseInt(CHNO)+1);
 
 				updatedRecord.set("VOSCHN", SCHN);
@@ -101,10 +103,19 @@ public class ChangeSCHN extends ExtendM3Transaction {
 			MATHED(mwoopeUpdateContainer, SCHN);
 		}
 
-		mwoopeRecord.readAll(mwoopeContainer, 3, updateClosure);
+		mwoopeRecord.readAll(mwoopeContainer, 3, pagesize, updateClosure);
 
 	}
 
+	/**
+	 * Check input parameters
+	 * @param cono Company
+	 * @param faci Facility
+	 * @param opno Operation number
+	 * @param schP Previous schedule number
+	 * @param schn New schedule number
+	 * @return true if all check have passed
+	 */
 	private boolean checkInputs(Integer cono, String  faci, Integer opno, Long schp, Long schn) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
@@ -154,7 +165,7 @@ public class ChangeSCHN extends ExtendM3Transaction {
 	 *    MATHED - Update material with schedulenumber
 	 */
 	private boolean MATHED(DBContainer mwoopeContainer, Long schn) {
-		DBAction mwohedRecord = this.database.table("MWOHED").index("00").build();
+		DBAction mwohedRecord = database.table("MWOHED").index("00").build();
 		DBContainer mwohedContainer = mwohedRecord.createContainer();
 		mwohedContainer.setInt("VHCONO", mwoopeContainer.getInt("VOCONO"));
 		mwohedContainer.setString("VHFACI", mwoopeContainer.getString("VOFACI"));
@@ -168,8 +179,8 @@ public class ChangeSCHN extends ExtendM3Transaction {
 				String CHNO = updatedRecord.get("VHCHNO").toString();
 				if(CHNO.equals("999")) {CHNO = "0";}
 
-				updatedRecord.set("VHLMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-				updatedRecord.set("VHCHID", this.program.getUser());
+				updatedRecord.set("VHLMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+				updatedRecord.set("VHCHID", program.getUser());
 				updatedRecord.set("VHCHNO", Integer.parseInt(CHNO)+1);
 
 				updatedRecord.update();
@@ -178,7 +189,7 @@ public class ChangeSCHN extends ExtendM3Transaction {
 
 		mwohedRecord.readLock(mwohedContainer, mwohedClosure);
 
-		DBAction mwomatRecord = this.database.table("MWOMAT").index("10").build();
+		DBAction mwomatRecord = database.table("MWOMAT").index("10").build();
 		DBContainer mwomatContainer = mwomatRecord.createContainer();
 		mwomatContainer.set("VMCONO", mwoopeContainer.get("VOCONO"));
 		mwomatContainer.set("VMFACI", mwoopeContainer.get("VOFACI"));
@@ -187,7 +198,7 @@ public class ChangeSCHN extends ExtendM3Transaction {
 		mwomatContainer.set("VMOPNO", mwoopeContainer.get("VOOPNO"));
 
 		Closure<?> mwomatClosure= { DBContainer MWOMATdata ->
-			DBAction update = this.database.table("MWOMAT").index("10").build();
+			DBAction update = database.table("MWOMAT").index("10").build();
 			DBContainer MWOMATrecord = update.createContainer();
 			MWOMATrecord.set("VMCONO", MWOMATdata.get("VMCONO"));
 			MWOMATrecord.set("VMFACI", MWOMATdata.get("VMFACI"));
@@ -202,14 +213,15 @@ public class ChangeSCHN extends ExtendM3Transaction {
 				String CHNO = updatedRecord.get("VMCHNO").toString();
 				if(CHNO.equals("999")) {CHNO = "0";}
 
-				updatedRecord.set("VMLMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-				updatedRecord.set("VMCHID", this.program.getUser());
+				updatedRecord.set("VMLMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+				updatedRecord.set("VMCHID", program.getUser());
 				updatedRecord.set("VMCHNO", Integer.parseInt(CHNO)+1);
 
 				updatedRecord.update();
 			})
 		}
 
-		return mwomatRecord.readAll(mwomatContainer,5,mwomatClosure)!=0;
+		int pagesize = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000 ? 10000: mi.getMaxRecords();
+		return mwomatRecord.readAll(mwomatContainer,5,pagesize,mwomatClosure)!=0;
 	}
 }
