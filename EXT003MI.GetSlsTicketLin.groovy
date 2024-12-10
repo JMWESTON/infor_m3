@@ -137,7 +137,8 @@ public class GetSlsTicketLin extends ExtendM3Transaction {
 			mi.write();
 		}
 
-		return query.readAll(container, 8, releasedProcessor);
+		int pagesize = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000 ? 10000: mi.getMaxRecords();
+		return query.readAll(container, 8, pagesize, releasedProcessor);
 	}
 
 }
