@@ -5,6 +5,7 @@
  * Description: same than option 94 in PMS230 except do not change MWOHED.VHSCHN to 0
  * Date                         Changed By                         Description
  * 20240115                     ddecosterd@hetic3.fr     	création
+ * 20241210                     ddecosterd@hetic3.fr     	code review
  */
 public class DelSCHN extends ExtendM3Transaction {
 	private final MIAPI mi;

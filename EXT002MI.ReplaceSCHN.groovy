@@ -5,6 +5,7 @@
  * Description: Replace SCHN with a new value
  * Date                         Changed By                         Description
  * 20240116                     ddecosterd@hetic3.fr     	création
+ * 20241210                     ddecosterd@hetic3.fr     	code review
  */
 public class ReplaceSCHN extends ExtendM3Transaction {
 	private final MIAPI mi;

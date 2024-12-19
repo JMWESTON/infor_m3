@@ -5,6 +5,7 @@
  * Description: same than option 91 in PMS230 except do not change MWOHED.VHSCHN
  * Date                         Changed By                         Description
  * 20240116                     ddecosterd@hetic3.fr     	création
+ * 20241210                     ddecosterd@hetic3.fr     	code review
  */
 public class AddSCHN extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -65,7 +66,7 @@ public class AddSCHN extends ExtendM3Transaction {
 		Closure<?>emptyClosure= { DBContainer MWOMATdata ->
 		}
 		int pagesize = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000 ? 10000: mi.getMaxRecords();
-		
+
 		if(mwomatRecord.readAll(mwomatContainer,5, pagesize, emptyClosure) > 0) {
 			mi.error("At Least One component is PL handled");
 			return;
