@@ -144,7 +144,7 @@ public class LstNOTES extends ExtendM3Transaction {
 		ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 		mwoopeExpressionFactory = mwoopeExpressionFactory.gt("VOLMTS", LAST_UPDATE.toString());
 
-		DBAction mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS","VOWOST").build();
+		DBAction mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
 		mwoopeContainer.setInt("VOCONO", cono);
 		mwoopeContainer.setString("VOFACI", faci);
@@ -168,7 +168,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			mitmasRecord.readAll(mitmasContainer,1,{DBContainer mitmasData ->
 				mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 				mwoopeExpressionFactory = mwoopeExpressionFactory.le("VOLMTS", LAST_UPDATE.toString()).and(mwoopeExpressionFactory.eq("VOPRNO", mitmasData.getString("MMITNO")));
-				mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS","VOWOST").build();
+				mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 				mwoopeContainer = mwoopeRecord.createContainer();
 				mwoopeContainer.setInt("VOCONO", cono);
 				mwoopeContainer.setString("VOFACI", faci);
@@ -186,7 +186,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			mwohedContainer.setInt("VHCONO", cono);
 			mwohedContainer.setString("VHFACI", faci);
 			mwohedRecord.readAll(mwohedContainer, 2,{  DBContainer mwohedData ->
-				mwoopeRecord = database.table("MWOOPE").index("00").selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS","VOWOST").build();
+				mwoopeRecord = database.table("MWOOPE").index("00").selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 				mwoopeContainer = mwoopeRecord.createContainer();
 				mwoopeContainer.setInt("VOCONO", cono);
 				mwoopeContainer.setString("VOFACI", faci);
