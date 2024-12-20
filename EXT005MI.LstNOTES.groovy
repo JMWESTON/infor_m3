@@ -64,7 +64,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -73,7 +73,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			mi.error("L'établissement est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
+		if(!utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
 			mi.error("L'établissement est inexistant.");
 			return false;
 		}
@@ -82,7 +82,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			mi.error("Le poste de charge est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
+		if(!utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
 			mi.error("Le poste de charge est inexistant");
 			return false;
 		}
@@ -365,11 +365,6 @@ public class LstNOTES extends ExtendM3Transaction {
 		int wwopno = 0;
 		long wwmere = 0;
 		long schs = 0;
-		/*exttr1Record.readAll(exttr1Container, 3, 1, {  DBContainer exttr1Data ->
-		 wwopno = exttr1Data.getInt("EXOPNO");
-		 wwmere = exttr1Data.getLong("EXMERE");
-		 schs =  exttr1Data.getLong("EXSCHS");
-		 });*/
 		boolean firsLine = true;
 		List<String> list = ["E_COUPBR","E_CPDES","E_CPDOU","E_CPFOU","E_MAROCP"];
 		Double nbof = 0;
@@ -460,7 +455,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			}
 
 			if(exttr1Data.getLong("EXMERE") != wwmere || exttr1Data.getInt("EXOPNO") != wwopno) {
-				this.mi.write();
+				mi.write();
 				wwopno = exttr1Data.getInt("EXOPNO");
 				wwmere = exttr1Data.getLong("EXMERE");
 				schs =  exttr1Data.getLong("EXSCHS");
@@ -474,40 +469,40 @@ public class LstNOTES extends ExtendM3Transaction {
 			mwohedContainer.setString("VHMFNO", exttr1Data.getString("EXMFNO"));
 			mwohedRecord.read(mwohedContainer);
 			nbof += mwohedContainer.getDouble("VHORQT");
-			this.mi.getOutData().put("OPNO", exttr1Data.get("EXOPNO").toString());
-			this.mi.getOutData().put("MERE", exttr1Data.get("EXMERE").toString());
+			mi.getOutData().put("OPNO", exttr1Data.get("EXOPNO").toString());
+			mi.getOutData().put("MERE", exttr1Data.get("EXMERE").toString());
 			if(exttr1Data.getLong("EXDEBI")!= exttr1Data.getLong("EXMERE"))
-				this.mi.getOutData().put("DEBI", exttr1Data.get("EXDEBI").toString());
+				mi.getOutData().put("DEBI", exttr1Data.get("EXDEBI").toString());
 			else
-				this.mi.getOutData().put("DEBI", "0");
-			this.mi.getOutData().put("GRP1", exttr1Data.getString("EXGRP1"));
-			this.mi.getOutData().put("GRP2", exttr1Data.getString("EXGRP2"));
-			this.mi.getOutData().put("GRP3", exttr1Data.getString("EXGRP3"));
-			this.mi.getOutData().put("GRP4", exttr1Data.getString("EXGRP4"));
-			this.mi.getOutData().put("GRP5", exttr1Data.getString("EXGRP5"));
-			this.mi.getOutData().put("NBOF", Math.round(nbof).toString());
-			this.mi.getOutData().put("TIGE", exttr1Data.getString("EXTIGE"));
-			this.mi.getOutData().put("NMAT", nmat.toString());
+				mi.getOutData().put("DEBI", "0");
+			mi.getOutData().put("GRP1", exttr1Data.getString("EXGRP1"));
+			mi.getOutData().put("GRP2", exttr1Data.getString("EXGRP2"));
+			mi.getOutData().put("GRP3", exttr1Data.getString("EXGRP3"));
+			mi.getOutData().put("GRP4", exttr1Data.getString("EXGRP4"));
+			mi.getOutData().put("GRP5", exttr1Data.getString("EXGRP5"));
+			mi.getOutData().put("NBOF", Math.round(nbof).toString());
+			mi.getOutData().put("TIGE", exttr1Data.getString("EXTIGE"));
+			mi.getOutData().put("NMAT", nmat.toString());
 			if(!mtn1.isBlank()) {
-				this.mi.getOutData().put("MTN1", mtn1);
-				this.mi.getOutData().put("REQ1", req1.toString());
+				mi.getOutData().put("MTN1", mtn1);
+				mi.getOutData().put("REQ1", req1.toString());
 			}
 			if(req2> 0) {
-				this.mi.getOutData().put("MTN2", mtn2);
-				this.mi.getOutData().put("REQ2", req2.toString());
+				mi.getOutData().put("MTN2", mtn2);
+				mi.getOutData().put("REQ2", req2.toString());
 			}
-			this.mi.getOutData().put("STDT", exttr1Data.get("EXSTDT").toString());
-			this.mi.getOutData().put("DESS", dess.toString());
-			this.mi.getOutData().put("STYL", exttr1Data.getString("EXGRP1").trim()+" "+exttr1Data.getString("EXGRP2").trim()+" "+exttr1Data.getString("EXGRP3").trim()+" "+exttr1Data.getString("EXGRP4").trim());
-			this.mi.getOutData().put("QDEB", "0");//TODO calcul
-			this.mi.getOutData().put("RPQT", (rpq1+rpq2).toString());
-			this.mi.getOutData().put("ITDS", exttr1Data.getString("EXITDS"));
-			this.mi.getOutData().put("SCHS", schs.toString());
-			this.mi.getOutData().put("UPDT", lastUpd);
-			this.mi.getOutData().put("WOST", exttr1Data.getString("EXWOST"));
+			mi.getOutData().put("STDT", exttr1Data.get("EXSTDT").toString());
+			mi.getOutData().put("DESS", dess.toString());
+			mi.getOutData().put("STYL", exttr1Data.getString("EXGRP1").trim()+" "+exttr1Data.getString("EXGRP2").trim()+" "+exttr1Data.getString("EXGRP3").trim()+" "+exttr1Data.getString("EXGRP4").trim());
+			mi.getOutData().put("QDEB", "0");//TODO calcul
+			mi.getOutData().put("RPQT", (rpq1+rpq2).toString());
+			mi.getOutData().put("ITDS", exttr1Data.getString("EXITDS"));
+			mi.getOutData().put("SCHS", schs.toString());
+			mi.getOutData().put("UPDT", lastUpd);
+			mi.getOutData().put("WOST", exttr1Data.getString("EXWOST"));
 		} );
 		if(nbRead > 0) {
-			this.mi.write();
+			mi.write();
 		}
 	}
 
@@ -517,10 +512,10 @@ public class LstNOTES extends ExtendM3Transaction {
 	 * @param prefix The column prefix of the table.
 	 */
 	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", this.program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) this.utility.call("DateUtil", "currentTimeAsInt"));
+		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"CHID", program.getUser());
+		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
 		insertedRecord.set(prefix+"CHNO", 1);
 	}
 
@@ -533,8 +528,8 @@ public class LstNOTES extends ExtendM3Transaction {
 		int CHNO = updatedRecord.getInt(prefix+"CHNO");
 		if(CHNO== 999) {CHNO = 0;}
 		CHNO++;
-		updatedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		updatedRecord.set(prefix+"CHID", this.program.getUser());
+		updatedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		updatedRecord.set(prefix+"CHID", program.getUser());
 		updatedRecord.setInt(prefix+"CHNO", CHNO);
 	}
 
