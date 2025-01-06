@@ -5,6 +5,7 @@
  * Description: Mise à jour du SCHN pour le OPNO courant et les suivants
  * Date                         Changed By                         Description
  * 20240117                   ddecosterd@hetic3.fr     		Création
+ * 20241210                     ddecosterd@hetic3.fr     	code review
  */
 public class ChangeSCHN extends ExtendM3Transaction {
 	private final MIAPI mi;

@@ -54,6 +54,9 @@ public class CheckUtil extends ExtendM3Utility {
 		return query.read(container);
 	}
 
+	/**
+	 * On vérifie que le SCHN existe.
+	 */
 	public boolean checkSCHNExist(DatabaseAPI database, Integer cono, Long schn) {
 		DBAction query = database.table("MSCHMA").index("00").build();
 		DBContainer container = query.getContainer();
@@ -62,6 +65,9 @@ public class CheckUtil extends ExtendM3Utility {
 		return query.read(container);
 	}
 
+	/**
+	 * On vérifie que le PLGR existe.
+	 */
 	public boolean checkPLGRExist(DatabaseAPI database, Integer cono, String faci, String plgr) {
 		DBAction query = database.table("MPDWCT").index("00").build();
 		DBContainer container = query.getContainer();
@@ -71,6 +77,9 @@ public class CheckUtil extends ExtendM3Utility {
 		return query.read(container);
 	}
 
+	/**
+	 * On vérifie que l'article existe.
+	 */
 	public boolean checkITNOExist(DatabaseAPI database, Integer cono, String itno) {
 		DBAction query = database.table("MITMAS").index("00").build();
 		DBContainer container = query.getContainer();
@@ -79,6 +88,9 @@ public class CheckUtil extends ExtendM3Utility {
 		return query.read(container);
 	}
 
+	/**
+	 * On vérifie que le PUNO existe.
+	 */
 	public boolean checkPUNOExist(DatabaseAPI database, Integer cono, String puno) {
 		DBAction query = database.table("MPHEAD").index("00").build();
 		DBContainer container = query.getContainer();
