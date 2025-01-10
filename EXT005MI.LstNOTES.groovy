@@ -17,14 +17,14 @@ public class LstNOTES extends ExtendM3Transaction {
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
 
-	private String CUS_PLGR = "E_CPDES";
-	private String CUS_EMPL_MORCEAUX = "PEAUSSERIE";
-	private String CUS_MORCEAU = "ZZ1";
-	private int CUS_CSEQ = 7778;
-	private int CUS_MSEQ = 8889;
-	private long LAST_UPDATE = 0;
-	private String LAST_CALL_EXT001 = "";
-	private String TABLE_MATERIAL = "EXT002";
+	private String cusPlgr = "E_CPDES";
+	private String cusEmplMorceaux = "PEAUSSERIE";
+	private String cusMorceau = "ZZ1";
+	private int cusCseq = 7778;
+	private int cusMseq = 8889;
+	private long lastUpdate = 0;
+	private String lastCallExt001 = "";
+	private String tableMaterial = "EXT002";
 
 	public LstNOTES(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
@@ -49,7 +49,7 @@ public class LstNOTES extends ExtendM3Transaction {
 
 		boolean shchFilter = SCHS != null && SCHS == 1;
 
-		liste(CONO, FACI, PLGR, LAST_CALL_EXT001, TABLE_MATERIAL, shchFilter);
+		liste(CONO, FACI, PLGR, lastCallExt001, tableMaterial, shchFilter);
 	}
 
 	/**
@@ -91,45 +91,49 @@ public class LstNOTES extends ExtendM3Transaction {
 	}
 
 	/**
-	 * Get default values from CUGEX1
+	 * Get config values
 	 * @param cono
 	 * @param faci
 	 * @param plgr
 	 */
 	private void init(int cono, String faci, String plgr) {
-		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030","F1A130","F1A230","F1N096","F1N196").build();
-		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
-		CUGEX1Container.setInt("F1CONO", cono);
-		CUGEX1Container.setString("F1FILE", "BATCH");
-		CUGEX1Container.setString("F1PK01", "EXT001");
-
-		if(CUGEX1Record.read(CUGEX1Container)) {
-			LAST_CALL_EXT001 = CUGEX1Container.getString("F1A030");
-			TABLE_MATERIAL = CUGEX1Container.getString("F1A130");
+		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXA015","EXA115","EXN018").build();
+		DBContainer extparContainer = extparRecord.createContainer();
+		extparContainer.setInt("EXCONO", cono);
+		extparContainer.setString("EXFILE", "EXT001");
+		extparContainer.setString("EXPK01", "sourceTable");
+		if(extparRecord.read(extparContainer)) {
+			tableMaterial = extparContainer.getString("EXA015");
+			lastCallExt001 = extparContainer.getString("EXA115");
 		}
 
+		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030","F1A130","F1A230","F1N096","F1N196").build();
+		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
+
+		CUGEX1Container.setInt("F1CONO", cono);
 		CUGEX1Container.setString("F1FILE", "EXTEND");
 		CUGEX1Container.setString("F1PK01", "IPRD002");
 		if(CUGEX1Record.read(CUGEX1Container)) {
-			CUS_PLGR = CUGEX1Container.getString("F1A030");
-			CUS_EMPL_MORCEAUX = CUGEX1Container.getString("F1A130");
-			CUS_MORCEAU = CUGEX1Container.getString("F1A230");
-			CUS_CSEQ = CUGEX1Container.get("F1N096");
-			CUS_MSEQ = CUGEX1Container.get("F1N196");
+			cusPlgr = CUGEX1Container.getString("F1A030");
+			cusEmplMorceaux = CUGEX1Container.getString("F1A130");
+			cusMorceau = CUGEX1Container.getString("F1A230");
+			cusCseq = CUGEX1Container.get("F1N096");
+			cusMseq = CUGEX1Container.get("F1N196");
 		}else {
-			CUGEX1Container.setString("F1A030",CUS_PLGR);
-			CUGEX1Container.setString("F1A130", CUS_EMPL_MORCEAUX);
-			CUGEX1Container.setString("F1A230", CUS_MORCEAU);
-			CUGEX1Container.set("F1N096", CUS_CSEQ);
-			CUGEX1Container.set("F1N196", CUS_MSEQ);
+			CUGEX1Container.setString("F1A030",cusPlgr);
+			CUGEX1Container.setString("F1A130", cusEmplMorceaux);
+			CUGEX1Container.setString("F1A230", cusMorceau);
+			CUGEX1Container.set("F1N096", cusCseq);
+			CUGEX1Container.set("F1N196", cusMseq);
 			insertTrackingField(CUGEX1Container, "F1");
 			CUGEX1Record.insert(CUGEX1Container);
 		}
 
-		CUGEX1Container.setString("F1PK02", faci);
-		CUGEX1Container.setString("F1PK03", plgr);
-		if(CUGEX1Record.read(CUGEX1Container)) {
-			LAST_UPDATE = CUGEX1Container.getDouble("F1N096").toLong()-400000;
+		extparContainer.setString("EXPK01", "lastUpdate");
+		extparContainer.setString("EXPK02", faci);
+		extparContainer.setString("EXPK03", plgr);
+		if(extparRecord.read(extparContainer)) {
+			lastUpdate = extparContainer.getLong("EXN018")-400000;
 		}
 
 	}
@@ -142,7 +146,7 @@ public class LstNOTES extends ExtendM3Transaction {
 	 */
 	private void fillTR1(int cono, String faci, String plgr) {
 		ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
-		mwoopeExpressionFactory = mwoopeExpressionFactory.gt("VOLMTS", LAST_UPDATE.toString());
+		mwoopeExpressionFactory = mwoopeExpressionFactory.gt("VOLMTS", lastUpdate.toString());
 
 		DBAction mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
@@ -157,17 +161,17 @@ public class LstNOTES extends ExtendM3Transaction {
 			insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
 		});
 
-		if(LAST_UPDATE>0)
+		if(lastUpdate>0)
 		{
 			//Update EXTTR1 row who contains Items who have been modified since the last update.
 			ExpressionFactory mitmasExpressionFactory = database.getExpressionFactory("MITMAS");
-			mitmasExpressionFactory = mitmasExpressionFactory.gt("MMLMTS", LAST_UPDATE.toString());
+			mitmasExpressionFactory = mitmasExpressionFactory.gt("MMLMTS", lastUpdate.toString());
 			DBAction mitmasRecord = database.table("MITMAS").index("00").matching(mitmasExpressionFactory).build();
 			DBContainer mitmasContainer = mitmasRecord.createContainer();
 			mitmasContainer.setInt("MMCONO", cono);
 			mitmasRecord.readAll(mitmasContainer,1,{DBContainer mitmasData ->
 				mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
-				mwoopeExpressionFactory = mwoopeExpressionFactory.le("VOLMTS", LAST_UPDATE.toString()).and(mwoopeExpressionFactory.eq("VOPRNO", mitmasData.getString("MMITNO")));
+				mwoopeExpressionFactory = mwoopeExpressionFactory.le("VOLMTS", lastUpdate.toString()).and(mwoopeExpressionFactory.eq("VOPRNO", mitmasData.getString("MMITNO")));
 				mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 				mwoopeContainer = mwoopeRecord.createContainer();
 				mwoopeContainer.setInt("VOCONO", cono);
@@ -180,7 +184,7 @@ public class LstNOTES extends ExtendM3Transaction {
 
 			//Update EXTTR1 row who coonected to row from MWHOED who have been modified since the last update.
 			ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MWOHED");
-			mwohedExpressionFactory = mwohedExpressionFactory.gt("VHLMTS", LAST_UPDATE.toString()).and(mwohedExpressionFactory.eq("VHPLGR", plgr));
+			mwohedExpressionFactory = mwohedExpressionFactory.gt("VHLMTS", lastUpdate.toString()).and(mwohedExpressionFactory.eq("VHPLGR", plgr));
 			DBAction mwohedRecord = database.table("MWOHED").index("00").matching(mwohedExpressionFactory).build();
 			DBContainer mwohedContainer = mwohedRecord.createContainer();
 			mwohedContainer.setInt("VHCONO", cono);
@@ -303,30 +307,29 @@ public class LstNOTES extends ExtendM3Transaction {
 	}
 
 	/**
-	 * Save in CUGEX1 the date of the last update for plgr
+	 * Save in EXTPAR the date of the last update for plgr
 	 * @param cono
 	 * @param faci
 	 * @param plgr
 	 * @param lastUpdate
 	 */
 	private void saveLastUpdate(int cono, String faci, String plgr, long lastUpdate) {
-		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1N096").build();
-		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
-		CUGEX1Container.setInt("F1CONO", cono);
-		CUGEX1Container.setString("F1FILE", "EXTEND");
-		CUGEX1Container.setString("F1PK01", "IPRD002");
-		CUGEX1Container.setString("F1PK02", faci);
-		CUGEX1Container.setString("F1PK03", plgr);
-		if(!CUGEX1Record.readLock(CUGEX1Container,{LockedResult updatedRecord ->
-					updatedRecord.set("F1N096",  lastUpdate);
-					updateTrackingField(updatedRecord, "F1");
+		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXN018").build();
+		DBContainer extparContainer = extparRecord.createContainer();
+		extparContainer.setInt("EXCONO", cono);
+		extparContainer.setString("EXFILE", "EXT001");
+		extparContainer.setString("EXPK01", "lastUpdate");
+		extparContainer.setString("EXPK02", faci);
+		extparContainer.setString("EXPK03", plgr);
+		if(!extparRecord.readLock(extparContainer,{LockedResult updatedRecord ->
+					updatedRecord.set("EXN018",  lastUpdate);
+					updateTrackingField(updatedRecord, "EX");
 					updatedRecord.update();
 				})) {
-			CUGEX1Container.set("F1N096",  lastUpdate);;
-			insertTrackingField(CUGEX1Container, "F1");
-			CUGEX1Record.insert(CUGEX1Container);
+			extparContainer.set("EXN018",  lastUpdate);;
+			insertTrackingField(extparContainer, "EX");
+			extparRecord.insert(extparContainer);
 		}
-
 	}
 
 	/**
@@ -376,7 +379,7 @@ public class LstNOTES extends ExtendM3Transaction {
 
 				if(!list.contains(plgr))
 					return;
-					
+
 				ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 				mwoopeExpressionFactory = mwoopeExpressionFactory.eq("VOPRNO", exttr1Data.getString("EXPRNO")).and(mwoopeExpressionFactory.eq("VOMFNO", exttr1Data.getString("EXMFNO")));
 				DBAction mwoopeRecord = database.table("MWOOPE").index("70").matching(mwoopeExpressionFactory).build();
@@ -437,7 +440,7 @@ public class LstNOTES extends ExtendM3Transaction {
 				DBContainer mpdwctContainer = mpdwctRecord.createContainer();
 				mpdwctContainer.setInt("PPCONO", exttr1Data.getInt("EXCONO"));
 				mpdwctContainer.setString("PPFACI", exttr1Data.getString("EXFACI"));
-				mpdwctContainer.setString("PPPLGR", CUS_PLGR);
+				mpdwctContainer.setString("PPPLGR", cusPlgr);
 				if(mpdwctRecord.read(mpdwctContainer)) {
 					DBAction mwoopeRecord = database.table("MWOOPE").index("00").selection("VOSCHN").build();
 					DBContainer mwoopeContainer = mwoopeRecord.createContainer();
