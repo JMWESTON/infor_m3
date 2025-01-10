@@ -12,7 +12,6 @@ public class EXT003 extends ExtendM3Batch {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
-	private final LoggerAPI logger;
 
 	private String errorMessage = "";
 
@@ -21,12 +20,11 @@ public class EXT003 extends ExtendM3Batch {
 	private int defaultNSPN = 3;
 	private List<double[]> corresFomrStock = [];
 
-	public EXT003(ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller, LoggerAPI logger) {
+	public EXT003(ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.program = program;
 		this.database = database;
 		this.utility = utility;
 		this.miCaller = miCaller;
-		this.logger = logger;
 	}
 
 	public void main() {
@@ -45,7 +43,6 @@ public class EXT003 extends ExtendM3Batch {
 
 		if(!checkInputs(CONO, FACI))
 			return;
-		logger.info("checkinput")
 
 		init(CONO);
 
@@ -53,7 +50,6 @@ public class EXT003 extends ExtendM3Batch {
 
 		initOrig(CONO, FACI);
 
-		logger.info("fillextwr0")
 		fillEXTWR0(CONO, FACI);
 
 		fillWR3_WR2(CONO, FACI);
@@ -63,12 +59,12 @@ public class EXT003 extends ExtendM3Batch {
 		if(!fillEXNOT(CONO, FACI)) {
 			return;
 		}
-		logger.info("fillextnot")
+
+		creationNoteMerePrioritaire(CONO);
 
 		if(!creationNoteMere(CONO)) {
 			return;
 		}
-		logger.info("creationnotemere")
 	}
 
 	/**
@@ -420,7 +416,9 @@ public class EXT003 extends ExtendM3Batch {
 			wr3Container.set("EXPRNO", WR0data.get("EXPRNO"));
 
 			if(!wr3Record.readLock(wr3Container){LockedResult updatedRecord ->
-				logger.info("PRNO:"+WR0data.get("EXPRNO")+" STKU:"+updatedRecord.getInt("EXTSKU"));
+						if(updatedRecord.getInt("EXORIG")==0) {
+							updatedRecord.setInt("EXORIG", WR0data.getInt("EXORIG"));
+						}
 						updatedRecord.setInt("EXTSKU", updatedRecord.getInt("EXTSKU") + 1);
 						updateTrackingField(updatedRecord, "EX");
 						updatedRecord.update();
@@ -550,8 +548,14 @@ public class EXT003 extends ExtendM3Batch {
 	 * @return true if no error occured.
 	 */
 	private boolean fillEXNOT(Integer cono, String faci) {
+		DBAction wr0Record = database.table("EXTWR0").index("02").build();
+		DBContainer wr0Container = wr0Record.createContainer();
+		wr0Container.setInt("EXCONO", cono);
+		wr0Container.setString("EXFACI", faci);
+		wr0Container.setInt("EXORIG", 0);
+		int nbPrio = wr0Record.readAll(wr0Container,3, 1000, {});
 
-		int nbTotNot = getNbTotNot(cono, faci) + 100;//TODO remove +100
+		int nbTotNot = getNbTotNot(cono, faci) + nbPrio;
 		long wwschn = 88880000000;
 		Set<Long> usedSCHN = usedSCHN(cono, faci);
 		Set<Long> usableSCHN = usableSCHN(cono, usedSCHN);
@@ -596,6 +600,7 @@ public class EXT003 extends ExtendM3Batch {
 	 */
 	private boolean creationNoteMere(Integer cono) {
 		boolean noError = true;
+		boolean hasSkuNotUsed = true;
 
 		ExpressionFactory EXTNOTExpressionFactory = database.getExpressionFactory("EXTNOT");
 		EXTNOTExpressionFactory =  EXTNOTExpressionFactory.gt("EXREST","0");
@@ -606,20 +611,29 @@ public class EXT003 extends ExtendM3Batch {
 
 
 		Closure<Integer> NOTClosure = { DBContainer NOTdata ->
-			ExpressionFactory EXTNWR3ExpressionFactory = database.getExpressionFactory(" EXTWR3");
+		if(hasSkuNotUsed) {
+			ExpressionFactory EXTNWR3ExpressionFactory = database.getExpressionFactory("EXTWR3");
 			EXTNWR3ExpressionFactory =  EXTNWR3ExpressionFactory.gt("EXREST","0");
 
 			DBAction wr3Record = database.table("EXTWR3").index("01").matching(EXTNWR3ExpressionFactory).selectAllFields().build();
 			DBContainer wr3Container = wr3Record.createContainer();
 			wr3Container.set("EXCONO", cono);
 
+			String FACI;
 			String HDPR;
 			int wr3NPPN = 0;
 
-			wr3Record.readAll(wr3Container, 1, 1,{ DBContainer wr3data ->
+			int readed = wr3Record.readAll(wr3Container, 1, 1,{ DBContainer wr3data ->
+				FACI = wr3data.getString("EXFACI");
 				HDPR = 	wr3data.getString("EXHDPR");
 				wr3NPPN = wr3data.getInt("EXNPPN");
 			});
+
+			//wee have finished the
+			if(readed == 0) {
+				hasSkuNotUsed = false;
+				return;
+			}
 
 			int aProgNot = NOTdata.getInt("EXREST");
 			int pldt = NOTdata.getInt("EXPLDT");
@@ -639,8 +653,8 @@ public class EXT003 extends ExtendM3Batch {
 				});
 			}
 
-			EXTNWR3ExpressionFactory =  EXTNWR3ExpressionFactory.and(EXTNWR3ExpressionFactory.eq("EXHDPR",HDPR));
-			wr3Record = database.table("EXTWR3").index("01").matching(EXTNWR3ExpressionFactory).selectAllFields().build();
+			wr3Container.setString("EXFACI", FACI);
+			wr3Container.setString("EXHDPR", HDPR);
 
 			Closure<Boolean> WR3ReadClosure = { DBContainer wr3data ->
 				if(aProgNot > 0) {
@@ -653,10 +667,6 @@ public class EXT003 extends ExtendM3Batch {
 
 					if(aProgSku >= aProgNot)
 						aProgSku = aProgNot;
-
-					if(wr3data.getInt("EXORIG") == 0) {
-						aProgSku = 1;
-					}
 
 					DBAction wr3URecord = database.table("EXTWR3").index("00").build();
 					DBContainer wr3UContainer = wr3URecord.createContainer();
@@ -672,24 +682,23 @@ public class EXT003 extends ExtendM3Batch {
 						updatedRecord.update();
 					}
 
-					ExpressionFactory EXTWR0ExpressionFactory = database.getExpressionFactory("EXTWR0");
-					EXTWR0ExpressionFactory =  EXTWR0ExpressionFactory.eq("EXSCHN","0");
-					DBAction wr0Record = database.table("EXTWR0").index("00").matching(EXTWR0ExpressionFactory).build();
+					DBAction wr0Record = database.table("EXTWR0").index("03").selection("EXORIG").build();
 					DBContainer wr0Container = wr0Record.createContainer();
 					wr0Container.setInt("EXCONO", wr3data.getInt("EXCONO"));
 					wr0Container.setString("EXFACI", wr3data.getString("EXFACI"));
 					wr0Container.setString("EXHDPR", wr3data.getString("EXHDPR"));
 					wr0Container.setString("EXPRNO", wr3data.getString("EXPRNO"));
-
-					wr0Record.readAll(wr0Container,4, aProgSku, {DBContainer WR0data ->
+					wr0Container.setLong("EXSCHN", 0);
+					
+					wr0Record.readAll(wr0Container,5, aProgSku, {DBContainer wr0data ->
 						DBAction update = database.table("EXTWR0").index("00").build();
 						DBContainer wr0UpdateContainer = update.createContainer();
-						wr0UpdateContainer.set("EXCONO", WR0data.get("EXCONO"));
-						wr0UpdateContainer.set("EXFACI", WR0data.get("EXFACI"));
-						wr0UpdateContainer.set("EXHDPR", WR0data.get("EXHDPR"));
-						wr0UpdateContainer.set("EXPRNO", WR0data.get("EXPRNO"));
-						wr0UpdateContainer.set("EXPLPN", WR0data.get("EXPLPN"));
-						wr0UpdateContainer.set("EXPLDT", WR0data.get("EXPLDT"));
+						wr0UpdateContainer.set("EXCONO", wr0data.get("EXCONO"));
+						wr0UpdateContainer.set("EXFACI", wr0data.get("EXFACI"));
+						wr0UpdateContainer.set("EXHDPR", wr0data.get("EXHDPR"));
+						wr0UpdateContainer.set("EXPRNO", wr0data.get("EXPRNO"));
+						wr0UpdateContainer.set("EXPLPN", wr0data.get("EXPLPN"));
+						wr0UpdateContainer.set("EXPLDT", wr0data.get("EXPLDT"));
 
 						update.readLock(wr0UpdateContainer,{LockedResult updatedRecord ->
 							updatedRecord.set("EXSCHN", NOTdata.get("EXSCHN"));
@@ -723,7 +732,7 @@ public class EXT003 extends ExtendM3Batch {
 							moplpRecord.readLock(moplpContainer,{ LockedResult updtedmoplp ->
 								updtedmoplp.set("ROSCHN", NOTdata.get("EXSCHN"));
 								updtedmoplp.setInt("ROFIDT", pldt);
-								updtedmoplp.setChar("ROPRIP", wr3data.getInt("EXORIG").toString());
+								updtedmoplp.setChar("ROPRIP", wr0data.getInt("EXORIG").toString());
 								updateTrackingField(updtedmoplp, "RO");
 								updtedmoplp.update();
 							});
@@ -741,12 +750,117 @@ public class EXT003 extends ExtendM3Batch {
 				}
 			}
 
+
 			//dans le pire des cas il faut aProgNot lignes pour remplir notre note
-			wr3Record.readAll(wr3Container, 1, aProgNot, WR3ReadClosure);
+			wr3Record.readAll(wr3Container, 3, aProgNot, WR3ReadClosure);
+		}
 		}
 
 		notRecord.readAll(notContainer, 1, NOTClosure);
 		return noError;
+	}
+
+	/**
+	 * Regroupement des of prioritaires en notes mères.
+	 * @param cono
+	 */
+	private void creationNoteMerePrioritaire(Integer cono) {
+		boolean needEmptyNote = false;
+
+		ExpressionFactory EXTNOTExpressionFactory = database.getExpressionFactory("EXTNOT");
+		EXTNOTExpressionFactory =  EXTNOTExpressionFactory.gt("EXREST","0");
+
+		DBAction notRecord = database.table("EXTNOT").index("10").matching(EXTNOTExpressionFactory).selectAllFields().build();
+		DBContainer notContainer = notRecord.createContainer();
+		notContainer.setInt("EXCONO", cono);
+
+
+		Closure<Integer> NOTClosure = { DBContainer NOTdata ->
+			DBAction wr0Record = database.table("EXTWR0").index("00").selection("EXFACI").build();
+			DBContainer wr0Container = wr0Record.createContainer();
+			wr0Container.set("EXCONO", cono);
+			
+			String FACI;
+			wr0Record.readAll(wr0Container, 1, 1,{ DBContainer wr0data ->
+				FACI = wr0data.getString("EXFACI");
+				});
+			
+			wr0Record = database.table("EXTWR0").index("02").selectAllFields().build();
+			wr0Container.setString("EXFACI", FACI);
+			wr0Container.setInt("EXORIG", 0);
+			wr0Container.setLong("EXSCHN", 0);
+			
+			int pldt = NOTdata.getInt("EXPLDT");
+
+			wr0Record.readAll(wr0Container,4,1,{DBContainer wr0Data ->
+
+				String HDPR = 	wr0Container.getString("EXHDPR");
+
+				ExpressionFactory EXTNWR3ExpressionFactory = database.getExpressionFactory("EXTWR3");
+				EXTNWR3ExpressionFactory =  EXTNWR3ExpressionFactory.gt("EXREST","0");
+				DBAction wr3Record = database.table("EXTWR3").index("00").matching(EXTNWR3ExpressionFactory).selectAllFields().build();
+				DBContainer wr3Container = wr3Record.createContainer();
+				wr3Container.setInt("EXCONO", wr0Data.getInt("EXCONO"));
+				wr3Container.setString("EXFACI", wr0Data.getString("EXFACI"));
+				wr3Container.setString("EXHDPR", wr0Data.getString("EXHDPR"));
+				wr3Container.setString("EXPRNO", wr0Data.getString("EXPRNO"));
+
+				wr3Record.readLock(wr3Container){LockedResult updated3Record ->
+					updated3Record.set("EXREST", (updated3Record.getInt("EXREST") - 1));
+					updateTrackingField(updated3Record, "EX");
+					updated3Record.update();
+				}
+
+				if(pldt == 0){
+					pldt = wr0Data.getInt("EXPLDT");
+					int currentDate = utility.call("DateUtil", "currentDateY8AsInt");
+					if(pldt < currentDate) {
+						pldt = currentDate;
+					}
+				}
+
+				DBAction notURecord = database.table("EXTNOT").index("00").build();
+				DBContainer notUContainer = notURecord.createContainer();
+				notUContainer.setInt("EXCONO", cono);
+				notUContainer.set("EXSCHN", NOTdata.get("EXSCHN"));
+				notURecord.readLock(notUContainer,{LockedResult updatedNotRecord ->
+					updatedNotRecord.setInt("EXNPPN", 1);
+					updatedNotRecord.setInt("EXPLDT", pldt);
+					updatedNotRecord.setInt("EXREST", 0);
+					updateTrackingField(updatedNotRecord, "EX");
+					updatedNotRecord.update();
+				});
+
+				DBAction moplpRecord = database.table("MMOPLP").index("00").build();
+				DBContainer moplpContainer = moplpRecord.createContainer();
+				moplpContainer.setInt("ROCONO", cono);
+				moplpContainer.setInt("ROPLPN", wr0Data.getInt("EXPLPN"));
+
+				moplpRecord.readLock(moplpContainer,{ LockedResult updtedmoplp ->
+					updtedmoplp.set("ROSCHN", NOTdata.get("EXSCHN"));
+					updtedmoplp.setInt("ROFIDT", pldt);
+					updtedmoplp.setChar("ROPRIP",'0');
+					updateTrackingField(updtedmoplp, "RO");
+					updtedmoplp.update();
+				});
+
+				DBAction wr0URecord = database.table("EXTWR0").index("00").build();
+				DBContainer wr0UContainer = wr0URecord.createContainer();
+				wr0UContainer.setInt("EXCONO", wr0Data.getInt("EXCONO"));
+				wr0UContainer.setString("EXFACI", wr0Data.getString("EXFACI"));
+				wr0UContainer.setString("EXHDPR", wr0Data.getString("EXHDPR"));
+				wr0UContainer.setString("EXPRNO", wr0Data.getString("EXPRNO"));
+				wr0UContainer.setInt("EXPLPN", wr0Data.getInt("EXPLPN"));
+				wr0UContainer.setInt("EXPLDT", wr0Data.getInt("EXPLDT"));
+				wr0URecord.readLock(wr0UContainer,{ LockedResult updatedRecord ->
+					updatedRecord.set("EXSCHN", NOTdata.get("EXSCHN"));
+					updateTrackingField(updatedRecord, "EX");
+					updatedRecord.update();
+				});
+			});
+		}
+
+		notRecord.readAll(notContainer, 1, NOTClosure);
 	}
 
 	/**
@@ -837,7 +951,6 @@ public class EXT003 extends ExtendM3Batch {
 	 * @return origin number
 	 */
 	private int getOrigineBesoin(int cono, String orca, String trtp) {
-		logger.info("getOrigineBesoin orca:"+orca+" trtp:"+trtp);
 		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1N096").build();
 		DBContainer cugex1Container = cugex1Record.createContainer();
 		cugex1Container.setInt("F1CONO", cono);
@@ -884,7 +997,7 @@ public class EXT003 extends ExtendM3Batch {
 	}
 
 	/**
-	 * Set prioruty on new fabrication orders.
+	 * Set priority on new fabrication orders.
 	 * @param cono
 	 * @param faci
 	 */
