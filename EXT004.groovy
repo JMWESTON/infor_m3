@@ -1,4 +1,4 @@
-/* Description: Vide les tables EXTTR1 et EXTTR2 et met à 0 le timestamp de dernière mise à jour pour IPRD002
+/* Description: Vide les tables EXTTR1 et met à 0 le timestamp de dernière mise à jour pour IPRD002
  * Date                         Changed By                         Description
  * 20241016                     ddecosterd@hetic3.fr     	création
  */
@@ -22,35 +22,24 @@ public class EXT004 extends ExtendM3Batch {
 			entry.delete();
 		});
 
-		DBAction tr2Record = database.table("EXTTR2").index("00").build();
-		DBContainer tr2Container = tr2Record.createContainer();
-		tr2Record.readAllLock(tr2Container,0,{LockedResult entry ->
-			entry.delete();
-		});
-
-		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030").build();
-		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
-		CUGEX1Container.setInt("F1CONO", CONO);
-		CUGEX1Container.setString("F1FILE", "BATCH");
-		CUGEX1Container.setString("F1PK01", "EXT004");
-
-		if(!CUGEX1Record.read(CUGEX1Container))
+		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXA015", "EXN018").build();
+		DBContainer extparContainer = extparRecord.createContainer();
+		extparContainer.setInt("EXCONO", CONO);
+		extparContainer.setString("EXFILE", "EXT004");
+		extparContainer.setString("EXPK01", "FACI");
+		
+		if(!extparRecord.read(extparContainer))
 			return;
 
-		String  FACI = CUGEX1Container.getString("F1A030");
+		String  FACI = extparContainer.getString("EXA015");
 
-		CUGEX1Record = database.table("CUGEX1").index("00").selection("F1N096").build();
-		CUGEX1Container = CUGEX1Record.createContainer();
-		CUGEX1Container.setInt("F1CONO", CONO);
-		CUGEX1Container.setString("F1FILE", "EXTEND");
-		CUGEX1Container.setString("F1PK01", "IPRD002");
-		CUGEX1Container.setString("F1PK02", FACI);
-		CUGEX1Record.readAllLock(CUGEX1Container, 4, {LockedResult updatedRecord ->
-			updatedRecord.setDouble("F1N096", 0);
+		extparContainer.setString("EXPK01", "lastUpdate");
+		extparContainer.setString("EXPK02", FACI);
+		extparRecord.readAllLock(extparContainer, 4, {LockedResult updatedRecord ->
+			updatedRecord.setLong("EXN018", 0);
 			updateTrackingField(updatedRecord, "F1");
 			updatedRecord.update();
 		});
-
 	}
 
 	private void updateTrackingField(LockedResult updatedRecord, String prefix) {

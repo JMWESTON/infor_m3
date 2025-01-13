@@ -39,7 +39,7 @@ public class LstMere extends ExtendM3Transaction {
 		mwoopeContainer.setString("VOPLGR", PLGR);
 		mwoopeContainer.setLong("VOSCHN", MERE);
 
-		mwoopeRecord.readAll(mwoopeContainer, 4, { DBContainer mwoopeData ->
+		mwoopeRecord.readAll(mwoopeContainer, 4, 1000, { DBContainer mwoopeData ->
 			boolean getLine = true;
 			if(FMER!= null && FMER>0) {
 				DBAction mwohedRecord = database.table("MWOHED").index("00").selection("VHSCHN").build();
@@ -56,22 +56,32 @@ public class LstMere extends ExtendM3Transaction {
 
 			}
 			if(getLine) {
-				this.mi.getOutData().put("FACI", FACI);
-				this.mi.getOutData().put("PRNO", mwoopeData.get("VOPRNO").toString());
-				this.mi.getOutData().put("MFNO", mwoopeData.get("VOMFNO").toString());
-				this.mi.getOutData().put("OPNO", mwoopeData.get("VOOPNO").toString());
-				this.mi.getOutData().put("ORQA", mwoopeData.get("VOORQA").toString());
-				this.mi.write();
+				mi.getOutData().put("FACI", FACI);
+				mi.getOutData().put("PRNO", mwoopeData.get("VOPRNO").toString());
+				mi.getOutData().put("MFNO", mwoopeData.get("VOMFNO").toString());
+				mi.getOutData().put("OPNO", mwoopeData.get("VOOPNO").toString());
+				mi.getOutData().put("ORQA", mwoopeData.get("VOORQA").toString());
+				mi.write();
 			}
 		});
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param faci
+	 * @param plgr
+	 * @param opno
+	 * @param mere
+	 * @param fmer
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(Integer cono, String  faci, String plgr, Integer opno, Long mere, Long fmer) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -80,7 +90,7 @@ public class LstMere extends ExtendM3Transaction {
 			mi.error("L'établissement est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
+		if(!utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
 			mi.error("L'établissement est inexistant.");
 			return false;
 		}
@@ -89,7 +99,7 @@ public class LstMere extends ExtendM3Transaction {
 			mi.error("Le poste de charge est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
+		if(!utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
 			mi.error("Le poste de charge est inexistant");
 			return false;
 		}
@@ -103,13 +113,13 @@ public class LstMere extends ExtendM3Transaction {
 			mi.error("La note de débit est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkSCHNExist", database, cono, mere)) {
+		if(!utility.call("CheckUtil", "checkSCHNExist", database, cono, mere)) {
 			mi.error("La note de débit est inexistante");
 			return false;
 		}
 
 
-		if(fmer != null && !this.utility.call("CheckUtil", "checkSCHNExist", database, cono, fmer)) {
+		if(fmer != null && !utility.call("CheckUtil", "checkSCHNExist", database, cono, fmer)) {
 			mi.error("La note de débit est inexistante");
 			return false;
 		}

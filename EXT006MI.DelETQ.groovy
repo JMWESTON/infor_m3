@@ -25,7 +25,7 @@ public class DelETQ extends ExtendM3Transaction {
 			mi.error("La division est obligatoire.");
 			return;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, CONO)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, CONO)) {
 			mi.error("La division est inexistante.");
 			return;
 		}

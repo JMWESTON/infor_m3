@@ -1,3 +1,11 @@
+/**
+ * README
+ *
+ * Name: DateUtil
+ * Description: Utility sur les nombres
+ * Date       Changed By                     Description
+ * 20240328   François LEPREVOST             Create NumberUtil
+ */
 public class NumberUtil extends ExtendM3Utility {
 	/**
 	 * Check if number is valid

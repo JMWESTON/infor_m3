@@ -35,32 +35,33 @@ public class LstETQ extends ExtendM3Transaction {
 			fieldName = "EXRESP";
 		}
 
-		DBAction extetqRecord = database.table("EXTETQ").index(idx).selectAllFields().build();
+		DBAction extetqRecord = database.table("EXTETQ").index(idx).selection("EXCONO","EXNDMD","EXRESP","EXIMPR","EXITNO","EXITDS","EXCFI3","EXMADI","EXNBET","EXPUNO","EXPUNO",
+				"EXSCHN","EXMFNO","EXRGDT").build();
 		DBContainer extetqContainer = extetqRecord.createContainer();
 		extetqContainer.setInt("EXCONO", CONO);
 		extetqContainer.setString(fieldName, UTIL);
 
-		extetqRecord.readAll(extetqContainer, 2, { DBContainer extetqData ->
-			this.mi.getOutData().put("CONO", extetqData.getInt("EXCONO").toString());
-			this.mi.getOutData().put("NDMD", extetqData.getLong("EXNDMD").toString());
-			this.mi.getOutData().put("RESP", extetqData.getString("EXRESP"));
-			this.mi.getOutData().put("IMPR", extetqData.getString("EXIMPR"));
-			this.mi.getOutData().put("ITNO", extetqData.getString("EXITNO"));
-			this.mi.getOutData().put("ITDS", extetqData.getString("EXITDS"));
-			this.mi.getOutData().put("CFI3", extetqData.getString("EXCFI3"));
-			this.mi.getOutData().put("MADI", extetqData.getString("EXMADI"));
-			this.mi.getOutData().put("NBET", extetqData.getInt("EXNBET").toString());
-			this.mi.getOutData().put("PUNO", extetqData.getString("EXPUNO"));
-			this.mi.getOutData().put("SCHN", extetqData.getLong("EXSCHN").toString());
-			this.mi.getOutData().put("MFNO", extetqData.getString("EXMFNO"));
-			this.mi.getOutData().put("RGDT", extetqData.getInt("EXRGDT").toString());
+		extetqRecord.readAll(extetqContainer, 2, 2000, { DBContainer extetqData ->
+			mi.getOutData().put("CONO", extetqData.getInt("EXCONO").toString());
+			mi.getOutData().put("NDMD", extetqData.getLong("EXNDMD").toString());
+			mi.getOutData().put("RESP", extetqData.getString("EXRESP"));
+			mi.getOutData().put("IMPR", extetqData.getString("EXIMPR"));
+			mi.getOutData().put("ITNO", extetqData.getString("EXITNO"));
+			mi.getOutData().put("ITDS", extetqData.getString("EXITDS"));
+			mi.getOutData().put("CFI3", extetqData.getString("EXCFI3"));
+			mi.getOutData().put("MADI", extetqData.getString("EXMADI"));
+			mi.getOutData().put("NBET", extetqData.getInt("EXNBET").toString());
+			mi.getOutData().put("PUNO", extetqData.getString("EXPUNO"));
+			mi.getOutData().put("SCHN", extetqData.getLong("EXSCHN").toString());
+			mi.getOutData().put("MFNO", extetqData.getString("EXMFNO"));
+			mi.getOutData().put("RGDT", extetqData.getInt("EXRGDT").toString());
 
 			DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMFUDS").build();
 			DBContainer mitmasContainer = mitmasRecord.createContainer();
 			mitmasContainer.setInt("MMCONO", CONO);
 			mitmasContainer.setString("MMITNO", extetqData.getString("EXITNO"));
 			mitmasRecord.read(mitmasContainer);
-			this.mi.getOutData().put("FUDS", mitmasContainer.getString("MMFUDS"));
+			mi.getOutData().put("FUDS", mitmasContainer.getString("MMFUDS"));
 
 			DBAction csytabRecord = database.table("CSYTAB").index("20").selection("CTTX40").build();
 			DBContainer csytabContainer = csytabRecord.createContainer();
@@ -68,21 +69,28 @@ public class LstETQ extends ExtendM3Transaction {
 			csytabContainer.setString("CTSTCO", "CFI3");
 			csytabContainer.setString("CTSTKY", extetqData.getString("EXCFI3"));
 			csytabRecord.readAll(csytabContainer, 3, 1, { DBContainer csytabData ->
-				this.mi.getOutData().put("TX40", csytabData.getString("CTTX40"));
+				mi.getOutData().put("TX40", csytabData.getString("CTTX40"));
 			});
 
-			this.mi.write();
+			mi.write();
 		});
 
 
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param util
+	 * @param dmim
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(Integer cono, String util, Integer dmim) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}

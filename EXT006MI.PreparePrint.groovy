@@ -56,7 +56,7 @@ public class PreparePrint extends ExtendM3Transaction {
 		String lastCFI3;
 		int nbet = 0;
 
-		extetqRecord.readAll(extetqContainer, 2, { DBContainer extetqData ->
+		extetqRecord.readAll(extetqContainer, 2, 2000, { DBContainer extetqData ->
 			if(!resp.equals(extetqData.getString("EXRESP"))) {
 				if(!resp.equals("")) {
 					totalEtiq = rupture(CONO, totalEtiq, BJNO, lastItno, lastPuno, lastMfno, lastSchn, lastResp, lastCFI3, totalResp, "FIN");
@@ -124,6 +124,21 @@ public class PreparePrint extends ExtendM3Transaction {
 				totalEtiq = rupture(CONO, totalEtiq, BJNO, lastItno, lastPuno, lastMfno, lastSchn, lastResp, lastCFI3, totalResp, "RESP");
 	}
 
+	/**
+	 * création du package en rupture RESP ou PUNO ou SCHN  
+	 * @param cono
+	 * @param totalEtiq
+	 * @param bjno
+	 * @param itno
+	 * @param puno
+	 * @param mfno
+	 * @param schn
+	 * @param resp
+	 * @param cfi3
+	 * @param totalValue
+	 * @param rupture
+	 * @return The number of package created.
+	 */
 	private Integer rupture(int cono, int totalEtiq, long bjno, String itno, String puno, String mfno, long schn, String resp, String cfi3, int totalValue, String rupture) {
 		totalEtiq++;
 		String panr = String.format("%010d",bjno)+String.format("%010d",totalEtiq);
@@ -134,6 +149,20 @@ public class PreparePrint extends ExtendM3Transaction {
 		return totalEtiq;
 	}
 
+	/**
+	 * create package used to print label.
+	 * @param cono
+	 * @param itno
+	 * @param puno
+	 * @param mfno
+	 * @param schn
+	 * @param resp
+	 * @param panr
+	 * @param gwtm
+	 * @param rupture
+	 * @param cfi3
+	 * @return true if no error
+	 */
 	private boolean addMPTRNS(int cono, String itno, String puno, String mfno, long schn, String resp, String panr, int gwtm, String rupture, String cfi3 ) {
 		boolean isOk = true;
 		Map<String,String> mms470MIParameters =  [CONO:cono.toString(),PANR:panr,PACT:"998"];
@@ -180,19 +209,25 @@ public class PreparePrint extends ExtendM3Transaction {
 	 * @param prefix the prefix column
 	 */
 	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", this.program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) this.utility.call("DateUtil", "currentTimeAsInt"));
+		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"CHID", program.getUser());
+		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
 		insertedRecord.set(prefix+"CHNO", 1);
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param bjno
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(int cono, Long bjno) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}

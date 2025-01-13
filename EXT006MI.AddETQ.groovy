@@ -13,8 +13,8 @@ public class AddETQ extends ExtendM3Transaction {
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
 
-	private String CUS_TEXTLIBRE = "520";
-	private String CUS_GROUP = "";
+	private String cusTxtLibre = "520";
+	private String cusGroup = "";
 	private String validateur;
 	private String imprimante;
 	private Integer manufacture;
@@ -62,7 +62,7 @@ public class AddETQ extends ExtendM3Transaction {
 			mplineContainer.setInt("IBCONO", CONO);
 			mplineContainer.setString("IBPUNO", PUNO);
 
-			mplineRecord.readAll(mplineContainer, 2, { DBContainer mplineData ->
+			mplineRecord.readAll(mplineContainer, 2, 1000, { DBContainer mplineData ->
 				if(!AJOUT_ETQ(CONO, RESP, mplineData.getString("IBITNO"), "", getNextLong(mplineData.getDouble("IBORQA")), PUNO, SCHN, MADI))
 					return;
 			});
@@ -72,7 +72,7 @@ public class AddETQ extends ExtendM3Transaction {
 			mwohedContainer.setInt("VHCONO", CONO);
 			mwohedContainer.setLong("VHSCHN", SCHN);
 
-			mwohedRecord.readAll(mwohedContainer, 2, { DBContainer mwohedData ->
+			mwohedRecord.readAll(mwohedContainer, 2, 1000, { DBContainer mwohedData ->
 				if(!AJOUT_ETQ(CONO, RESP, mwohedData.getString("VHPRNO"), mwohedData.getString("VHMFNO"), getNextLong(mwohedData.getDouble("VHORQT")), PUNO, SCHN, MADI))
 					return;
 			});
@@ -84,6 +84,18 @@ public class AddETQ extends ExtendM3Transaction {
 		return value>truncated ? truncated + 1 : truncated;
 	}
 
+	/**
+	 * Ajout étiquette à la table EXTETQ
+	 * @param cono
+	 * @param resp
+	 * @param itno
+	 * @param mfno
+	 * @param nbet
+	 * @param puno
+	 * @param schn
+	 * @param madi
+	 * @return true if no error
+	 */
 	private boolean AJOUT_ETQ(int cono, String resp, String itno, String mfno, long nbet, String puno, Long schn, String madi) {
 		boolean result = false;
 		DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMHIE3","MMCFI3", "MMITDS").build();
@@ -110,6 +122,20 @@ public class AddETQ extends ExtendM3Transaction {
 		return result;
 	}
 
+	/**
+	 * write record in EXTETQ
+	 * @param cono
+	 * @param itno
+	 * @param nbet
+	 * @param mfno
+	 * @param resp
+	 * @param cfi3
+	 * @param itds
+	 * @param puno
+	 * @param schn
+	 * @param madi
+	 * @return true if no error
+	 */
 	private boolean writeRecord(int cono, String itno, int nbet, String mfno, String resp, String cfi3, String itds, String puno, Long schn, String madi) {
 		Long ndmd = getNdmd();
 		if (ndmd == null)
@@ -132,23 +158,27 @@ public class AddETQ extends ExtendM3Transaction {
 		insertTrackingField(extetqContainer, "EX");
 		extetqRecord.insert(extetqContainer);
 
-		this.mi.getOutData().put("CONO", cono.toString());
-		this.mi.getOutData().put("NDMD", ndmd.toString());
-		this.mi.getOutData().put("ITNO", itno);
-		this.mi.getOutData().put("NBET", nbet.toString());
-		this.mi.getOutData().put("CFI3", cfi3);
-		this.mi.getOutData().put("ITDS", itds);
-		this.mi.getOutData().put("RESP", resp);
-		this.mi.getOutData().put("PUNO", puno);
-		this.mi.getOutData().put("SCHN", schn.toString());
-		this.mi.getOutData().put("MADI", madi);
-		this.mi.getOutData().put("IMPR", validateur);
-		this.mi.getOutData().put("RGDT", this.utility.call("DateUtil", "currentDateY8AsInt").toString());
-		this.mi.write();
+		mi.getOutData().put("CONO", cono.toString());
+		mi.getOutData().put("NDMD", ndmd.toString());
+		mi.getOutData().put("ITNO", itno);
+		mi.getOutData().put("NBET", nbet.toString());
+		mi.getOutData().put("CFI3", cfi3);
+		mi.getOutData().put("ITDS", itds);
+		mi.getOutData().put("RESP", resp);
+		mi.getOutData().put("PUNO", puno);
+		mi.getOutData().put("SCHN", schn.toString());
+		mi.getOutData().put("MADI", madi);
+		mi.getOutData().put("IMPR", validateur);
+		mi.getOutData().put("RGDT", utility.call("DateUtil", "currentDateY8AsInt").toString());
+		mi.write();
 
 		return true;
 	}
 
+	/**
+	 * Get new demand number
+	 * @return a new demand number
+	 */
 	private Long getNdmd() {
 		Long result = null;
 		Map<String,String> crs165MIParameters =  [NBTY:"Z2",NBID:"1"];
@@ -163,6 +193,10 @@ public class AddETQ extends ExtendM3Transaction {
 		return result;
 	}
 
+	/**
+	 * Get config values
+	 * @param cono
+	 */
 	private void init(int cono) {
 		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030","F1A130").build();
 		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
@@ -170,31 +204,46 @@ public class AddETQ extends ExtendM3Transaction {
 		CUGEX1Container.setString("F1FILE", "H5SDK");
 		CUGEX1Container.setString("F1PK01", "PRD009");
 		if(CUGEX1Record.read(CUGEX1Container)) {
-			CUS_TEXTLIBRE = CUGEX1Container.getString("F1A030");
-			CUS_GROUP = CUGEX1Container.getString("F1A130");
+			cusTxtLibre = CUGEX1Container.getString("F1A030");
+			cusGroup = CUGEX1Container.getString("F1A130");
 		}else {
-			CUGEX1Container.setString("F1A030",CUS_TEXTLIBRE);
-			CUGEX1Container.setString("F1A130",CUS_GROUP);
+			CUGEX1Container.setString("F1A030",cusTxtLibre);
+			CUGEX1Container.setString("F1A130",cusGroup);
 			insertTrackingField(CUGEX1Container, "F1");
 			CUGEX1Record.insert(CUGEX1Container);
 		}
 
 	}
 
+	/**
+	 *  Add default value for new record.
+	 * @param insertedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", this.program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) this.utility.call("DateUtil", "currentTimeAsInt"));
+		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"CHID", program.getUser());
+		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
 		insertedRecord.set(prefix+"CHNO", 1);
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param resp
+	 * @param itno
+	 * @param madi
+	 * @param puno
+	 * @param schn
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(Integer cono, String resp, String  itno, String madi, String puno, Long schn) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -223,12 +272,12 @@ public class AddETQ extends ExtendM3Transaction {
 			return false;
 		}
 
-		if(!itno.isBlank() && !this.utility.call("CheckUtil", "checkITNOExist", database, cono, itno)) {
+		if(!itno.isBlank() && !utility.call("CheckUtil", "checkITNOExist", database, cono, itno)) {
 			mi.error("L'article est inexistant.");
 			return false;
 		}
 
-		if(!puno.isBlank() && !this.utility.call("CheckUtil", "checkPUNOExist", database, cono, puno)) {
+		if(!puno.isBlank() && !utility.call("CheckUtil", "checkPUNOExist", database, cono, puno)) {
 			mi.error("Numéro d'OA inexistant.");
 			return false;
 		}
@@ -242,7 +291,7 @@ public class AddETQ extends ExtendM3Transaction {
 			return false;
 		}
 
-		if(schn != null && schn != 0 && !this.utility.call("CheckUtil", "checkSCHNExist", database, cono, schn)) {
+		if(schn != null && schn != 0 && !utility.call("CheckUtil", "checkSCHNExist", database, cono, schn)) {
 			mi.error("Note inexistante");
 			return false;
 		}
