@@ -6,6 +6,14 @@ import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
 
+/**
+ * README
+ *
+ * Name: DateUtil
+ * Description: Utility sur les dates
+ * Date       Changed By                     Description
+ * 20240328   François LEPREVOST             Create DateUtil
+ */
 public class DateUtil extends ExtendM3Utility {
 	/**
 	 * Get date in yyyyMMdd format

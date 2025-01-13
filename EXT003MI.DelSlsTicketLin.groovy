@@ -100,13 +100,17 @@ public class DelSlsTicketLin extends ExtendM3Transaction {
 		return query.read(container);
 	}
 
+	/**
+	 * Supprime l'enregistrement demandé 
+	 * @return true si l'enregistrement a été suprimé.
+	 */
 	private boolean deleteEnreg() {
 		long dlixLong = Long.parseLong(mapDatas.get("dlix"));
 		int ponrInt = Integer.parseInt(mapDatas.get("ponr"));
 		int posxInt = Integer.parseInt(mapDatas.get("posx"));
 		long itrnLong = Long.parseLong(mapDatas.get("itrn"));
 
-		DBAction query = database.table("EXT003").selectAllFields().index("00").build();
+		DBAction query = database.table("EXT003").index("00").build();
 		DBContainer container = query.getContainer();
 
 		container.set("EXCONO", cono);
