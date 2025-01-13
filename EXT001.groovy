@@ -47,7 +47,7 @@ public class EXT001 extends ExtendM3Batch {
 			mwomatContainer.setString("VMFACI", FACI);
 			mwomatContainer.setString("VMPRNO", mwohedData.getString("VHPRNO"));
 			mwomatContainer.setString("VMMFNO",mwohedData.getString("VHMFNO"));
-			mwomatRecord.readAll(mwomatContainer, 4, { DBContainer mwomatData ->
+			mwomatRecord.readAll(mwomatContainer, 4, 1000,{ DBContainer mwomatData ->
 				DBAction exttr2Record = database.table(tableName).index("00").build();
 				DBContainer exttr2Container = exttr2Record.createContainer();
 				exttr2Container.setString("EXBJNO", "MATERIAL_CALC");
@@ -74,60 +74,80 @@ public class EXT001 extends ExtendM3Batch {
 		saveTableName(CONO, tableName);
 	}
 
+	/**
+	 * Get table name to use for this call.
+	 * @param cono
+	 * @return The table name.
+	 */
 	private String getTableName(Integer cono) {
 		String tableName = "EXTTR2";
-		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1A130").build();
-		DBContainer cugex1Container = cugex1Record.createContainer();
-		cugex1Container.setInt("F1CONO", cono);
-		cugex1Container.setString("F1FILE", "BATCH");
-		cugex1Container.setString("F1PK01", "EXT001");
+		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXA015").build();
+		DBContainer extparContainer = extparRecord.createContainer();
+		extparContainer.setInt("EXCONO", cono);
+		extparContainer.setString("EXFILE", "EXT001");
+		extparContainer.setString("EXPK01", "sourceTable");
 
-		boolean foundRecord = cugex1Record.read(cugex1Container);
-		if( cugex1Container.getString("F1A130").equals("EXTTR2") )
-			tableName = "EXTTR3";
-		else
-			tableName = "EXTTR2";
+		boolean foundRecord = extparRecord.read(extparContainer);
+		if( foundRecord) {
+			if (extparContainer.getString("EXA015").equals("EXTTR2") )
+				tableName = "EXTTR3";
+			else
+				tableName = "EXTTR2";
 
-		if(!foundRecord) {
-			cugex1Container.setString("F1A130", "EXTTR2")
-			insertTrackingField(cugex1Container,"F1");
-			cugex1Record.insert(cugex1Container);
+		}else {
+			extparContainer.setString("EXA015", "EXTTR2")
+			insertTrackingField(extparContainer,"EX");
+			extparRecord.insert(extparContainer);
 		}
-
 		return tableName;
 
 	}
 
+	/**
+	 * Update the table to read in EXT005MI.LstNotes
+	 * @param cono
+	 * @param tableName
+	 */
 	private void saveTableName(Integer cono, String tableName) {
-		DBAction cugex1Record = database.table("CUGEX1").index("00").build();
-		DBContainer cugex1Container = cugex1Record.createContainer();
-		cugex1Container.setInt("F1CONO", cono);
-		cugex1Container.setString("F1FILE", "BATCH");
-		cugex1Container.setString("F1PK01", "EXT001");
+		DBAction extparRecord = database.table("EXTPAR").index("00").build();
+		DBContainer extparContainer = extparRecord.createContainer();
+		extparContainer.setInt("EXCONO", cono);
+		extparContainer.setString("EXFILE", "EXT001");
+		extparContainer.setString("EXPK01", "sourceTable");
 
-		cugex1Record.readLock(cugex1Container,{LockedResult updatedRecord ->
-			updatedRecord.setString("F1A130",tableName);
-			updatedRecord.setString("F1A030", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd HHmmss")));
-			updateTrackingField(updatedRecord, "F1");
+		extparRecord.readLock(extparContainer,{LockedResult updatedRecord ->
+			updatedRecord.setString("EXA015",tableName);
+			updatedRecord.setString("EXA115", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd HHmmss")));
+			updateTrackingField(updatedRecord, "EX");
 			updatedRecord.update();
 		});
 
 	}
 
+	/**
+	 *  Add default value for new record.
+	 * @param insertedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", this.program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) this.utility.call("DateUtil", "currentTimeAsInt"));
+		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"CHID", program.getUser());
+		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
 		insertedRecord.set(prefix+"CHNO", 1);
 	}
 
+	/**
+	 *  Add default value for updated record.
+	 * @param updatedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void updateTrackingField(LockedResult updatedRecord, String prefix) {
 		int CHNO = updatedRecord.getInt(prefix+"CHNO");
 		if(CHNO== 999) {CHNO = 0;}
 		CHNO++;
-		updatedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		updatedRecord.set(prefix+"CHID", this.program.getUser());
+		updatedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		updatedRecord.set(prefix+"CHID", program.getUser());
 		updatedRecord.setInt(prefix+"CHNO", CHNO);
 	}
 }

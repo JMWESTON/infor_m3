@@ -55,12 +55,19 @@ public class AddToJob extends ExtendM3Transaction {
 	}
 
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param ndmd
+	 * @param bjno
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(int cono, Long ndmd, Long bjno) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -87,11 +94,16 @@ public class AddToJob extends ExtendM3Transaction {
 		return true;
 	}
 
+	/**
+	 *  Add default value for updated record.
+	 * @param updatedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void updateTrackingField(LockedResult updatedRecord, String prefix) {
 		int CHNO = updatedRecord.getInt(prefix+"CHNO");
 		if(CHNO== 999) {CHNO = 0;}
-		updatedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		updatedRecord.set(prefix+"CHID", this.program.getUser());
+		updatedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		updatedRecord.set(prefix+"CHID", program.getUser());
 		updatedRecord.setInt(prefix+"CHNO", CHNO+1);
 	}
 }

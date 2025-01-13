@@ -32,24 +32,39 @@
 		DBAction mptrnsRecord = database.table("MPTRNS").index("00").matching(MPTRNSExpressionFactory).build();
 		DBContainer mptrnsContainer = mptrnsRecord.createContainer();
 		mptrnsContainer.setInt("ORCONO", CONO);
-		mptrnsRecord.readAllLock(mptrnsContainer, 1, {  LockedResult lockedRecord ->
-			Map<String,String> mms470MIParameters =  [CONO:CONO.toString(),PANR:lockedRecord.getString("ORPANR")];
-			miCaller.call("MMS470MI", "PrintPackage", mms470MIParameters , { Map<String, String> response ->
-				if(response.containsKey("error")) {
-					mi.error(response.errorMessage);
-					return;
-				}
+		mptrnsRecord.readAll(mptrnsContainer, 1, 2000, { DBContainer mptrnsData ->
+			DBAction mptrnsURecord =  database.table("MPTRNS").index("00").selection("ORPANR").build();
+			DBContainer mptrnsUContainer = mptrnsURecord.createContainer();
+			mptrnsUContainer.setInt("ORCONO", mptrnsData.getInt("ORCONO"));
+			mptrnsUContainer.setInt("ORDIPA",  mptrnsData.getInt("ORDIPA"));
+			mptrnsUContainer.setString("ORWHLO", mptrnsData.getString("ORWHLO"));
+			mptrnsUContainer.setLong("ORDLIX", mptrnsData.getLong("ORDLIX"));
+			mptrnsUContainer.setString("ORPANR", mptrnsData.getString("ORPANR"));
+			mptrnsURecord.readLock(mptrnsUContainer, {  LockedResult lockedRecord ->
+				Map<String,String> mms470MIParameters =  [CONO:CONO.toString(),PANR:lockedRecord.getString("ORPANR")];
+				miCaller.call("MMS470MI", "PrintPackage", mms470MIParameters , { Map<String, String> response ->
+					if(response.containsKey("error")) {
+						mi.error(response.errorMessage);
+						return;
+					}
+				});
+				lockedRecord.delete();
 			});
-			lockedRecord.delete();
 		});
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param bjno
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(int cono, Long bjno) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}

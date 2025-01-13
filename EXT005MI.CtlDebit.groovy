@@ -30,7 +30,7 @@ public class CtlDebit extends ExtendM3Transaction {
 
 		ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 		mwoopeExpressionFactory =  mwoopeExpressionFactory.eq("VOOPNO",OPNO.toString());
-		DBAction mwoopeRecord = database.table("MWOOPE").index("70").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOORQA").build();
+		DBAction mwoopeRecord = database.table("MWOOPE").index("70").matching(mwoopeExpressionFactory).selection("VOPRNO").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
 		mwoopeContainer.setInt("VOCONO", CONO);
 		mwoopeContainer.setString("VOFACI", FACI);
@@ -43,8 +43,8 @@ public class CtlDebit extends ExtendM3Transaction {
 			mitmasContainer.setInt("MMCONO", CONO);
 			mitmasContainer.setString("MMITNO", mwoopeData.getString("VOPRNO"));
 			if(mitmasRecord.read(mitmasContainer)) {
-				this.mi.getOutData().put("MODR", "D");
-				this.mi.write();
+				mi.getOutData().put("MODR", "D");
+				mi.write();
 			}
 		};
 
@@ -53,12 +53,21 @@ public class CtlDebit extends ExtendM3Transaction {
 		}
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param faci
+	 * @param plgr
+	 * @param opno
+	 * @param debi
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(Integer cono, String  faci, String plgr, Integer opno, Long debi) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -67,7 +76,7 @@ public class CtlDebit extends ExtendM3Transaction {
 			mi.error("L'établissement est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
+		if(!utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
 			mi.error("L'établissement est inexistant.");
 			return false;
 		}
@@ -76,7 +85,7 @@ public class CtlDebit extends ExtendM3Transaction {
 			mi.error("Le poste de charge est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
+		if(!utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
 			mi.error("Le poste de charge est inexistant");
 			return false;
 		}
@@ -90,7 +99,7 @@ public class CtlDebit extends ExtendM3Transaction {
 			mi.error("La note de débit est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkSCHNExist", database, cono, debi)) {
+		if(!utility.call("CheckUtil", "checkSCHNExist", database, cono, debi)) {
 			mi.error("La note de débit est inexistante");
 			return false;
 		}

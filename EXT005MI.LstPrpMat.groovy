@@ -46,22 +46,36 @@ public class LstPrpMat extends ExtendM3Transaction {
 		clearTables(BJNO);
 	}
 
+	/**
+	 *  Add default value for new record.
+	 * @param insertedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", this.program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) this.utility.call("DateUtil", "currentTimeAsInt"));
+		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"CHID", program.getUser());
+		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
 		insertedRecord.set(prefix+"CHNO", 1);
 	}
 
+	/**
+	 *  Add default value for updated record.
+	 * @param updatedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void updateTrackingField(LockedResult updatedRecord, String prefix) {
 		int CHNO = updatedRecord.getInt(prefix+"CHNO");
 		if(CHNO== 999) {CHNO = 0;}
-		updatedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		updatedRecord.set(prefix+"CHID", this.program.getUser());
+		updatedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		updatedRecord.set(prefix+"CHID", program.getUser());
 		updatedRecord.setInt(prefix+"CHNO", CHNO);
 	}
 
+	/**
+	 * Get config values
+	 * @param cono
+	 */
 	private init(int cono) {
 		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030","F1N096","F1N196","F1CHB1").build();
 		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
@@ -74,12 +88,21 @@ public class LstPrpMat extends ExtendM3Transaction {
 
 	}
 
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param faci
+	 * @param plgr
+	 * @param debi
+	 * @param mrcx
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(Integer cono, String  faci, String plgr, Long debi, Integer mrcx) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -88,7 +111,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 			mi.error("L'établissement est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
+		if(!utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
 			mi.error("L'établissement est inexistant.");
 			return false;
 		}
@@ -97,7 +120,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 			mi.error("Le poste de charge est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
+		if(!utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
 			mi.error("Le poste de charge est inexistant");
 			return false;
 		}
@@ -106,7 +129,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 			mi.error("La note de débit est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkSCHNExist", database, cono, debi)) {
+		if(!utility.call("CheckUtil", "checkSCHNExist", database, cono, debi)) {
 			mi.error("La note de débit est inexistante");
 			return false;
 		}
@@ -123,11 +146,16 @@ public class LstPrpMat extends ExtendM3Transaction {
 		return true;
 	}
 
+	/**
+	 * Get nex job number
+	 * @return new job number
+	 */
 	private String createBJNO() {
 		String bjno = null;
 		miCaller.call("CRS165MI", "RtvNextNumber", [NBTY:"Z1",NBID:"1"], { Map<String, String> response ->
 			if(response.containsKey("error")) {
 				mi.error(response.errorMessage);
+				return;
 			}else {
 				bjno = response.NBNR;
 			}
@@ -136,8 +164,11 @@ public class LstPrpMat extends ExtendM3Transaction {
 		return cono.toString()+" "+bjno;
 	}
 
+	/**
+	 * emptying table EXTTR2
+	 * @param bjno
+	 */
 	private void clearTables(String bjno) {
-
 		//emptying EXTTR2
 		DBAction tr2Record = database.table("EXTTR2").index("00").build();
 		DBContainer tr2Container = tr2Record.createContainer();
@@ -147,6 +178,15 @@ public class LstPrpMat extends ExtendM3Transaction {
 		});
 	}
 
+	/**
+	 * Fill EXTTR2 wuth data from MWOMAT 
+	 * @param bjno
+	 * @param cono
+	 * @param faci
+	 * @param plgr
+	 * @param debi
+	 * @param mrcx
+	 */
 	private void fillTR2(String bjno, int cono, String faci, String plgr, Long debi, int mrcx) {
 		DBAction mwoopeRecord = database.table("MWOOPE").index("70").selection("VOPRNO", "VOMFNO", "VOOPNO").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
@@ -155,7 +195,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 		mwoopeContainer.setString("VOPLGR", plgr);
 		mwoopeContainer.setLong("VOSCHN", debi);
 
-		mwoopeRecord.readAll(mwoopeContainer, 4, { DBContainer mwoopeData ->
+		mwoopeRecord.readAll(mwoopeContainer, 4, 1000, { DBContainer mwoopeData ->
 			DBAction mwohedRecord = database.table("MWOHED").index("00").selection("VHSCHN").build();
 			DBContainer mwohedContainer = mwohedRecord.createContainer();
 			mwohedContainer.setInt("VHCONO", cono);
@@ -172,7 +212,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 			mwomatContainer.setString("VMMFNO", mwoopeData.getString("VOMFNO"));
 			mwomatContainer.setInt("VMOPNO", mwoopeData.getInt("VOOPNO"));
 
-			mwomatRecord.readAll(mwomatContainer, 5, { DBContainer mwomatData ->
+			mwomatRecord.readAll(mwomatContainer, 5, 1000, { DBContainer mwomatData ->
 				DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMFUDS").build();
 				DBContainer mitmasContainer = mitmasRecord.createContainer();
 				mitmasContainer.setInt("MMCONO", cono);
@@ -205,7 +245,13 @@ public class LstPrpMat extends ExtendM3Transaction {
 		});
 	}
 
-	private liste(String bjno, int cono, int mrcx) {
+	/**
+	 * build the list
+	 * @param bjno
+	 * @param cono
+	 * @param mrcx
+	 */
+	private void liste(String bjno, int cono, int mrcx) {
 		ExpressionFactory exttr2PExpressionFactory = database.getExpressionFactory("EXTTR2");
 		exttr2PExpressionFactory =  exttr2PExpressionFactory.ne("EXREQT","0");
 		DBAction exttr2Record = database.table("EXTTR2").index("00").matching(exttr2PExpressionFactory).selection("EXMERE", "EXOPNO", "EXMTNO", "EXRPQT", "EXREQT").build();
@@ -251,13 +297,22 @@ public class LstPrpMat extends ExtendM3Transaction {
 
 	}
 
-	private writeOutput(double opno, long mere, String mtno, String fuds, double rpqt, double reqt ) {
-		this.mi.getOutData().put("OPNO", opno.toString());
-		this.mi.getOutData().put("MERE", mere.toString());
-		this.mi.getOutData().put("MTNO", mtno);
-		this.mi.getOutData().put("FUDS", fuds);
-		this.mi.getOutData().put("RPQT", rpqt.toString());
-		this.mi.getOutData().put("REQT", reqt.toString());
-		this.mi.write();
+	/**
+	 * Write a line of the MI
+	 * @param opno
+	 * @param mere
+	 * @param mtno
+	 * @param fuds
+	 * @param rpqt
+	 * @param reqt
+	 */
+	private void writeOutput(double opno, long mere, String mtno, String fuds, double rpqt, double reqt ) {
+		mi.getOutData().put("OPNO", opno.toString());
+		mi.getOutData().put("MERE", mere.toString());
+		mi.getOutData().put("MTNO", mtno);
+		mi.getOutData().put("FUDS", fuds);
+		mi.getOutData().put("RPQT", rpqt.toString());
+		mi.getOutData().put("REQT", reqt.toString());
+		mi.write();
 	}
 }

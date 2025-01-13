@@ -13,11 +13,11 @@ public class AddMorceau extends ExtendM3Transaction {
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
 
-	private String CUS_PLGR = "E_CPDES";
-	private String CUS_EMPL_MORCEAUX = "PEAUSSERIE";
-	private String CUS_MORCEAU = "ZZ1";
-	private int CUS_CSEQ = 7778;
-	private int CUS_MSEQ = 8889;
+	private String cusPlgr = "E_CPDES";
+	private String cusEmplMorceaux = "PEAUSSERIE";
+	private String cusMorceau = "ZZ1";
+	private int cusCseq = 7778;
+	private int cusMseq = 8889;
 
 	public AddMorceau(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
@@ -44,21 +44,20 @@ public class AddMorceau extends ExtendM3Transaction {
 		DBContainer mitmasContainer = mitmasRecord.createContainer();
 		mitmasContainer.setInt("MMCONO", CONO);
 		mitmasContainer.setString("MMITNO", MTNO);
-		if(!mitmasRecord.read(mitmasContainer) || mitmasContainer.getString("MMGRTI").equals(CUS_MORCEAU)) {
+		if(!mitmasRecord.read(mitmasContainer) || mitmasContainer.getString("MMGRTI").equals(cusMorceau)) {
 			mi.error(MTNO + " n'existe pas ou n'est pas un morceau");
 			return;
 		}
 
-		ExpressionFactory mwoopeExpressionFactory =  database.getExpressionFactory("MWOOPE");
-		mwoopeExpressionFactory = mwoopeExpressionFactory.eq("VOPLGR", PLGR);
-		DBAction mwoopeRecord = database.table("MWOOPE").index("90").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO").build();
+		DBAction mwoopeRecord = database.table("MWOOPE").index("70").selection("VOPRNO", "VOMFNO", "VOOPNO").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
 		mwoopeContainer.setInt("VOCONO", CONO);
 		mwoopeContainer.setString("VOFACI", FACI);
+		mwoopeContainer.setString("VOPLGR", PLGR);
 		mwoopeContainer.setLong("VOSCHN", DEBI);
 
 		int nbOF = 0;
-		mwoopeRecord.readAll(mwoopeContainer, 3, { DBContainer mwoopeData ->
+		mwoopeRecord.readAll(mwoopeContainer, 4, 1000, { DBContainer mwoopeData ->
 			nbOF++;
 		});
 
@@ -68,8 +67,8 @@ public class AddMorceau extends ExtendM3Transaction {
 
 		double calcRpqt = RPQT / nbOF;
 
-		mwoopeRecord.readAll(mwoopeContainer, 3, { DBContainer mwoopeData ->
-			int mseq = getMseq(CONO, FACI, CUS_MSEQ, mwoopeData);
+		mwoopeRecord.readAll(mwoopeContainer, 4, 1000, { DBContainer mwoopeData ->
+			int mseq = getMseq(CONO, FACI, cusMseq, mwoopeData);
 			mseq--;
 
 			Map<String,String> pms100miParameters =  [CONO:CONO.toString(),FACI:FACI,PRNO:mwoopeData.getString("VOPRNO"),
@@ -85,21 +84,35 @@ public class AddMorceau extends ExtendM3Transaction {
 
 	}
 
+	/**
+	 *  Add default value for new record.
+	 * @param insertedRecord
+	 * @param prefix The column prefix of the table.
+	 */
 	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) this.utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", this.program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) this.utility.call("DateUtil", "currentTimeAsInt"));
+		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+		insertedRecord.set(prefix+"CHID", program.getUser());
+		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
 		insertedRecord.set(prefix+"CHNO", 1);
 	}
 
-
+	/**
+	 * Check input values
+	 * @param cono
+	 * @param faci
+	 * @param plgr
+	 * @param debi
+	 * @param mtno
+	 * @param rpqt
+	 * @return true if no error.
+	 */
 	private boolean checkInputs(Integer cono, String  faci, String plgr, Long debi, String mtno, Double rpqt) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkConoExist", database, cono)) {
+		if(!utility.call("CheckUtil", "checkConoExist", database, cono)) {
 			mi.error("La division est inexistante.");
 			return false;
 		}
@@ -108,7 +121,7 @@ public class AddMorceau extends ExtendM3Transaction {
 			mi.error("L'établissement est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
+		if(!utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
 			mi.error("L'établissement est inexistant.");
 			return false;
 		}
@@ -117,7 +130,7 @@ public class AddMorceau extends ExtendM3Transaction {
 			mi.error("Le poste de charge est obligatoire.");
 			return false;
 		}
-		if(!this.utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
+		if(!utility.call("CheckUtil", "checkPLGRExist", database, cono, faci, plgr)) {
 			mi.error("Le poste de charge est inexistant");
 			return false;
 		}
@@ -135,6 +148,10 @@ public class AddMorceau extends ExtendM3Transaction {
 		return true;
 	}
 
+	/**
+	 * Get config values
+	 * @param cono
+	 */
 	private void init(int cono) {
 		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030","F1N096","F1N196","F1CHB1").build();
 		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
@@ -142,23 +159,31 @@ public class AddMorceau extends ExtendM3Transaction {
 		CUGEX1Container.setString("F1FILE", "EXTEND");
 		CUGEX1Container.setString("F1PK01", "IPRD002");
 		if(CUGEX1Record.read(CUGEX1Container)) {
-			CUS_PLGR = CUGEX1Container.getString("F1A030");
-			CUS_EMPL_MORCEAUX = CUGEX1Container.getString("F1A130");
-			CUS_MORCEAU = CUGEX1Container.getString("F1A230");
-			CUS_CSEQ = CUGEX1Container.get("F1N096");
-			CUS_MSEQ = CUGEX1Container.get("F1N196");
+			cusPlgr = CUGEX1Container.getString("F1A030");
+			cusEmplMorceaux = CUGEX1Container.getString("F1A130");
+			cusMorceau = CUGEX1Container.getString("F1A230");
+			cusCseq = CUGEX1Container.get("F1N096");
+			cusMseq = CUGEX1Container.get("F1N196");
 		}else {
-			CUGEX1Container.setString("F1A030",CUS_PLGR);
-			CUGEX1Container.setString("F1A130", CUS_EMPL_MORCEAUX);
-			CUGEX1Container.setString("F1A230", CUS_MORCEAU);
-			CUGEX1Container.set("F1N096", CUS_CSEQ);
-			CUGEX1Container.set("F1N196", CUS_MSEQ);
+			CUGEX1Container.setString("F1A030",cusPlgr);
+			CUGEX1Container.setString("F1A130", cusEmplMorceaux);
+			CUGEX1Container.setString("F1A230", cusMorceau);
+			CUGEX1Container.set("F1N096", cusCseq);
+			CUGEX1Container.set("F1N196", cusMseq);
 			insertTrackingField(CUGEX1Container, "F1");
 			CUGEX1Record.insert(CUGEX1Container);
 		}
 
 	}
 
+	/**
+	 * Get an mseq between 7000 and maxMseq
+	 * @param cono
+	 * @param faci
+	 * @param maxMseq
+	 * @param mwoopeData
+	 * @return
+	 */
 	private int getMseq(int cono, String faci, int maxMseq, DBContainer mwoopeData) {
 		int mseq = maxMseq;
 		ExpressionFactory  mwomat10ExpressionFactory = database.getExpressionFactory(" MWOMAT");
