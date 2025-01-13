@@ -43,7 +43,7 @@ public class AddBatchETQ extends ExtendM3Transaction {
 		}else {
 			ExpressionFactory mschmaExpressionFactory = database.getExpressionFactory("MSCHMA");
 			mschmaExpressionFactory =  mschmaExpressionFactory.ge("HSSCHN",FSCH.toString()).and(mschmaExpressionFactory.le("HSSCHN", TSCH.toString()));
-			int limit = TSCH - FSCH;
+			Long limit = TSCH - FSCH;
 			if(limit > 1000) {
 				mi.error("Intervalle trop grand");
 				return;
@@ -53,7 +53,7 @@ public class AddBatchETQ extends ExtendM3Transaction {
 			DBContainer  mschmaContainer = mschmaRecord.createContainer();
 			mschmaContainer.setInt("HSCONO", CONO);
 
-			mschmaRecord.readAll(mschmaContainer, 1, limit, { DBContainer mschmaData ->
+			mschmaRecord.readAll(mschmaContainer, 1, limit.intValue(), { DBContainer mschmaData ->
 				addETQ(CONO, RESP, ITNO, MADI, NBET, "", mschmaData.getLong("HSSCHN"), BJNO);
 			});
 
