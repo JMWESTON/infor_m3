@@ -98,6 +98,10 @@ public class GetSlsTicketLin extends ExtendM3Transaction {
 		return query.read(container);
 	}
 
+	/**
+	 * Recherche l'enregistrement correspondant aux paramètres d'entrée
+	 * @return La ligne si elle existe.
+	 */
 	private boolean searchEnreg() {
 		long dlixLong = Long.parseLong(mapDatas.get("dlix"));
 		int ponrInt = Integer.parseInt(mapDatas.get("ponr"));
@@ -137,8 +141,7 @@ public class GetSlsTicketLin extends ExtendM3Transaction {
 			mi.write();
 		}
 
-		int pagesize = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000 ? 10000: mi.getMaxRecords();
-		return query.readAll(container, 8, pagesize, releasedProcessor);
+		return query.readAll(container, 8, 1, releasedProcessor);
 	}
 
 }
