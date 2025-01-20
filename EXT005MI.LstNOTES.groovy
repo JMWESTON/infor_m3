@@ -129,6 +129,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			CUGEX1Record.insert(CUGEX1Container);
 		}
 
+		extparContainer.setString("EXFILE", "EXT005MI");
 		extparContainer.setString("EXPK01", "lastUpdate");
 		extparContainer.setString("EXPK02", faci);
 		extparContainer.setString("EXPK03", plgr);
@@ -169,7 +170,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			DBAction mitmasRecord = database.table("MITMAS").index("00").matching(mitmasExpressionFactory).build();
 			DBContainer mitmasContainer = mitmasRecord.createContainer();
 			mitmasContainer.setInt("MMCONO", cono);
-			mitmasRecord.readAll(mitmasContainer,1,{DBContainer mitmasData ->
+			mitmasRecord.readAll(mitmasContainer,1,10000,{DBContainer mitmasData ->
 				mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 				mwoopeExpressionFactory = mwoopeExpressionFactory.le("VOLMTS", lastUpdate.toString()).and(mwoopeExpressionFactory.eq("VOPRNO", mitmasData.getString("MMITNO")));
 				mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
@@ -177,7 +178,7 @@ public class LstNOTES extends ExtendM3Transaction {
 				mwoopeContainer.setInt("VOCONO", cono);
 				mwoopeContainer.setString("VOFACI", faci);
 				mwoopeContainer.setString("VOPLGR", plgr);
-				mwoopeRecord.readAll(mwoopeContainer, 3, { DBContainer mwoopeData ->
+				mwoopeRecord.readAll(mwoopeContainer, 3, 200, { DBContainer mwoopeData ->
 					insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
 				});
 			});
@@ -189,14 +190,14 @@ public class LstNOTES extends ExtendM3Transaction {
 			DBContainer mwohedContainer = mwohedRecord.createContainer();
 			mwohedContainer.setInt("VHCONO", cono);
 			mwohedContainer.setString("VHFACI", faci);
-			mwohedRecord.readAll(mwohedContainer, 2,{  DBContainer mwohedData ->
+			mwohedRecord.readAll(mwohedContainer, 2,10000,{  DBContainer mwohedData ->
 				mwoopeRecord = database.table("MWOOPE").index("00").selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 				mwoopeContainer = mwoopeRecord.createContainer();
 				mwoopeContainer.setInt("VOCONO", cono);
 				mwoopeContainer.setString("VOFACI", faci);
 				mwoopeContainer.setString("VOPRNO", mwohedData.getString("VHPRNO"));
 				mwoopeContainer.setString("VOMFNO", mwohedData.getString("VHMFNO"));
-				mwoopeRecord.readAll(mwoopeContainer, 4, { DBContainer mwoopeData ->
+				mwoopeRecord.readAll(mwoopeContainer, 4, 200, { DBContainer mwoopeData ->
 					insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
 				});
 			});
@@ -317,7 +318,7 @@ public class LstNOTES extends ExtendM3Transaction {
 		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXN018").build();
 		DBContainer extparContainer = extparRecord.createContainer();
 		extparContainer.setInt("EXCONO", cono);
-		extparContainer.setString("EXFILE", "EXT001");
+		extparContainer.setString("EXFILE", "EXT005MI");
 		extparContainer.setString("EXPK01", "lastUpdate");
 		extparContainer.setString("EXPK02", faci);
 		extparContainer.setString("EXPK03", plgr);
@@ -347,9 +348,9 @@ public class LstNOTES extends ExtendM3Transaction {
 		exttr1ExpressionFactory = exttr1ExpressionFactory.ne("EXSCHS", "0");
 		DBAction exttr1Record;
 		if(schsFilter)
-			exttr1Record = database.table("EXTTR1").index("00").matching(exttr1ExpressionFactory).selectAllFields().build();
+			exttr1Record = database.table("EXTTR1").index("00").matching(exttr1ExpressionFactory).selection("EXWOST","EXSCHS","EXGRP1","EXGRP2","EXGRP3","EXGRP4","EXGRP5","EXTIGE","EXSTDT","EXITDS").build();
 		else
-			exttr1Record = database.table("EXTTR1").index("00").selectAllFields().build();
+			exttr1Record = database.table("EXTTR1").index("00").selection("EXWOST","EXSCHS","EXGRP1","EXGRP2","EXGRP3","EXGRP4","EXGRP5","EXTIGE","EXSTDT","EXITDS").build();
 		DBContainer exttr1Container = exttr1Record.createContainer();
 		exttr1Container.setInt("EXCONO", cono);
 		exttr1Container.setString("EXFACI", faci);
@@ -371,7 +372,7 @@ public class LstNOTES extends ExtendM3Transaction {
 		boolean firsLine = true;
 		List<String> list = ["E_COUPBR","E_CPDES","E_CPDOU","E_CPFOU","E_MAROCP"];
 		Double nbof = 0;
-		int nbRead = exttr1Record.readAll(exttr1Container, 3, { DBContainer exttr1Data ->
+		int nbRead = exttr1Record.readAll(exttr1Container, 3, 10000, { DBContainer exttr1Data ->
 
 			if(exttr1Data.getString("EXWOST").equals("90")) {
 				if(schsFilter)
@@ -387,11 +388,11 @@ public class LstNOTES extends ExtendM3Transaction {
 				mwoopeContainer.setInt("VOCONO", exttr1Data.getInt("EXCONO"));
 				mwoopeContainer.setString("VOFACI", exttr1Data.getString("EXFACI"));
 				mwoopeContainer.setString("VOPLGR", "S"+plgr.substring(1));
-				boolean s_bipped = true;
+				boolean sBipped = true;
 				mwoopeRecord.readAll(mwoopeContainer, 3, 1, { DBContainer mwoopeData ->
-					s_bipped = false;
+					sBipped = false;
 				});
-				if(s_bipped)
+				if(sBipped)
 					return;
 			}
 
@@ -420,7 +421,7 @@ public class LstNOTES extends ExtendM3Transaction {
 				exttr2Container.set("EXMERE", exttr1Data.get("EXMERE"));
 				exttr2Container.setInt("EXOPNO", exttr1Data.getInt("EXOPNO"));
 
-				exttr2Record.readAll(exttr2Container, 5, { DBContainer exttr2Data ->
+				exttr2Record.readAll(exttr2Container, 5, 1000, { DBContainer exttr2Data ->
 					if(nmat == 0 || exttr2Data.getDouble("EXREQT") != 0) {
 						nmat ++;
 						if(nmat == 1) {
@@ -451,7 +452,7 @@ public class LstNOTES extends ExtendM3Transaction {
 					mwoopeContainer.setInt("VOOPNO", mpdwctContainer.getInt("PPKIWG"));
 
 					if(mwoopeRecord.read(mwoopeContainer)) {
-						dess = mwoopeContainer.getLong("VOSCHN"); //TODO recherche où
+						dess = mwoopeContainer.getLong("VOSCHN");
 					}
 				}
 				mere = exttr1Data.getLong("EXMERE");
@@ -497,7 +498,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			mi.getOutData().put("STDT", exttr1Data.get("EXSTDT").toString());
 			mi.getOutData().put("DESS", dess.toString());
 			mi.getOutData().put("STYL", exttr1Data.getString("EXGRP1").trim()+" "+exttr1Data.getString("EXGRP2").trim()+" "+exttr1Data.getString("EXGRP3").trim()+" "+exttr1Data.getString("EXGRP4").trim());
-			mi.getOutData().put("QDEB", "0");//TODO calcul
+			mi.getOutData().put("QDEB", "0");
 			mi.getOutData().put("RPQT", (rpq1+rpq2).toString());
 			mi.getOutData().put("ITDS", exttr1Data.getString("EXITDS"));
 			mi.getOutData().put("SCHS", schs.toString());
