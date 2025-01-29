@@ -43,7 +43,7 @@ public class AddBatchETQ extends ExtendM3Transaction {
 		}else {
 			ExpressionFactory mschmaExpressionFactory = database.getExpressionFactory("MSCHMA");
 			mschmaExpressionFactory =  mschmaExpressionFactory.ge("HSSCHN",FSCH.toString()).and(mschmaExpressionFactory.le("HSSCHN", TSCH.toString()));
-			Long limit = TSCH - FSCH;
+			Long limit = TSCH - FSCH +1;
 			if(limit > 1000) {
 				mi.error("Intervalle trop grand");
 				return;
