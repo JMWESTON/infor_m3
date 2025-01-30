@@ -54,7 +54,7 @@ public class AddETQ extends ExtendM3Transaction {
 		}
 
 		if(!ITNO.isBlank()) {
-			if(!AJOUT_ETQ(CONO, RESP, ITNO, "", NBET, PUNO, SCHN, MADI))
+			if(!ajoutETQ(CONO, RESP, ITNO, "", NBET, PUNO, SCHN, MADI))
 				return;
 		}else if(!PUNO.isBlank()) {
 			DBAction mplineRecord = database.table("MPLINE").index("00").selection("IBITNO","IBORQA").build();
@@ -63,7 +63,7 @@ public class AddETQ extends ExtendM3Transaction {
 			mplineContainer.setString("IBPUNO", PUNO);
 
 			mplineRecord.readAll(mplineContainer, 2, 1000, { DBContainer mplineData ->
-				if(!AJOUT_ETQ(CONO, RESP, mplineData.getString("IBITNO"), "", getNextLong(mplineData.getDouble("IBORQA")), PUNO, SCHN, MADI))
+				if(!ajoutETQ(CONO, RESP, mplineData.getString("IBITNO"), "", getNextLong(mplineData.getDouble("IBORQA")), PUNO, SCHN, MADI))
 					return;
 			});
 		}else if(SCHN != null) {
@@ -73,7 +73,7 @@ public class AddETQ extends ExtendM3Transaction {
 			mwohedContainer.setLong("VHSCHN", SCHN);
 
 			mwohedRecord.readAll(mwohedContainer, 2, 1000, { DBContainer mwohedData ->
-				if(!AJOUT_ETQ(CONO, RESP, mwohedData.getString("VHPRNO"), mwohedData.getString("VHMFNO"), getNextLong(mwohedData.getDouble("VHORQT")), PUNO, SCHN, MADI))
+				if(!ajoutETQ(CONO, RESP, mwohedData.getString("VHPRNO"), mwohedData.getString("VHMFNO"), getNextLong(mwohedData.getDouble("VHORQT")), PUNO, SCHN, MADI))
 					return;
 			});
 		}
@@ -96,7 +96,7 @@ public class AddETQ extends ExtendM3Transaction {
 	 * @param madi
 	 * @return true if no error
 	 */
-	private boolean AJOUT_ETQ(int cono, String resp, String itno, String mfno, long nbet, String puno, Long schn, String madi) {
+	private boolean ajoutETQ(int cono, String resp, String itno, String mfno, long nbet, String puno, Long schn, String madi) {
 		boolean result = false;
 		DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMHIE3","MMCFI3", "MMITDS").build();
 		DBContainer mitmasContainer = mitmasRecord.createContainer();
