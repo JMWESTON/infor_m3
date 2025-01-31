@@ -22,9 +22,6 @@ public class LstNOTES extends ExtendM3Transaction {
 	private String cusMorceau = "ZZ1";
 	private int cusCseq = 7778;
 	private int cusMseq = 8889;
-	private long lastUpdate = 0;
-	private String lastCallExt001 = "";
-	private String tableMaterial = "EXT002";
 
 	public LstNOTES(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
@@ -38,7 +35,6 @@ public class LstNOTES extends ExtendM3Transaction {
 		Integer CONO = mi.in.get("CONO");
 		String  FACI = (mi.inData.get("FACI") == null) ? "" : mi.inData.get("FACI").trim();
 		String PLGR = (mi.inData.get("PLGR") == null) ? "" : mi.inData.get("PLGR").trim();
-		Integer SCHS = mi.in.get("SCHS");
 
 		if(!checkInputs(CONO, FACI, PLGR))
 			return;
@@ -47,9 +43,7 @@ public class LstNOTES extends ExtendM3Transaction {
 
 		fillTR1(CONO, FACI, PLGR);
 
-		boolean shchFilter = SCHS != null && SCHS == 1;
-
-		liste(CONO, FACI, PLGR, lastCallExt001, tableMaterial, shchFilter);
+		liste(CONO, FACI, PLGR);
 	}
 
 	/**
@@ -97,16 +91,6 @@ public class LstNOTES extends ExtendM3Transaction {
 	 * @param plgr
 	 */
 	private void init(int cono, String faci, String plgr) {
-		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXA015","EXA115","EXN018").build();
-		DBContainer extparContainer = extparRecord.createContainer();
-		extparContainer.setInt("EXCONO", cono);
-		extparContainer.setString("EXFILE", "EXT001");
-		extparContainer.setString("EXPK01", "sourceTable");
-		if(extparRecord.read(extparContainer)) {
-			tableMaterial = extparContainer.getString("EXA015");
-			lastCallExt001 = extparContainer.getString("EXA115");
-		}
-
 		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1A030","F1A130","F1A230","F1N096","F1N196").build();
 		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
 
@@ -129,14 +113,6 @@ public class LstNOTES extends ExtendM3Transaction {
 			CUGEX1Record.insert(CUGEX1Container);
 		}
 
-		extparContainer.setString("EXFILE", "EXT005MI");
-		extparContainer.setString("EXPK01", "lastUpdate");
-		extparContainer.setString("EXPK02", faci);
-		extparContainer.setString("EXPK03", plgr);
-		if(extparRecord.read(extparContainer)) {
-			lastUpdate = extparContainer.getLong("EXN018")-400000;
-		}
-
 	}
 
 	/**
@@ -147,64 +123,18 @@ public class LstNOTES extends ExtendM3Transaction {
 	 */
 	private void fillTR1(int cono, String faci, String plgr) {
 		ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
-		mwoopeExpressionFactory = mwoopeExpressionFactory.gt("VOLMTS", lastUpdate.toString());
-
+		mwoopeExpressionFactory = mwoopeExpressionFactory.gt("VOSCHS", "0");
+		
 		DBAction mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
 		mwoopeContainer.setInt("VOCONO", cono);
 		mwoopeContainer.setString("VOFACI", faci);
 		mwoopeContainer.setString("VOPLGR", plgr);
 
-		Set<Long> schnSet = new HashSet<Long>();
-		long now = Instant.now().toEpochMilli();
-
-		mwoopeRecord.readAll(mwoopeContainer, 3, { DBContainer mwoopeData ->
+		mwoopeRecord.readAll(mwoopeContainer, 3, 1000, { DBContainer mwoopeData ->
 			insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
 		});
 
-		if(lastUpdate>0)
-		{
-			//Update EXTTR1 row who contains Items who have been modified since the last update.
-			ExpressionFactory mitmasExpressionFactory = database.getExpressionFactory("MITMAS");
-			mitmasExpressionFactory = mitmasExpressionFactory.gt("MMLMTS", lastUpdate.toString());
-			DBAction mitmasRecord = database.table("MITMAS").index("00").matching(mitmasExpressionFactory).build();
-			DBContainer mitmasContainer = mitmasRecord.createContainer();
-			mitmasContainer.setInt("MMCONO", cono);
-			mitmasRecord.readAll(mitmasContainer,1,10000,{DBContainer mitmasData ->
-				mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
-				mwoopeExpressionFactory = mwoopeExpressionFactory.le("VOLMTS", lastUpdate.toString()).and(mwoopeExpressionFactory.eq("VOPRNO", mitmasData.getString("MMITNO")));
-				mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
-				mwoopeContainer = mwoopeRecord.createContainer();
-				mwoopeContainer.setInt("VOCONO", cono);
-				mwoopeContainer.setString("VOFACI", faci);
-				mwoopeContainer.setString("VOPLGR", plgr);
-				mwoopeRecord.readAll(mwoopeContainer, 3, 200, { DBContainer mwoopeData ->
-					insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
-				});
-			});
-
-			//Update EXTTR1 row who coonected to row from MWHOED who have been modified since the last update.
-			ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MWOHED");
-			mwohedExpressionFactory = mwohedExpressionFactory.gt("VHLMTS", lastUpdate.toString()).and(mwohedExpressionFactory.eq("VHPLGR", plgr));
-			DBAction mwohedRecord = database.table("MWOHED").index("00").matching(mwohedExpressionFactory).build();
-			DBContainer mwohedContainer = mwohedRecord.createContainer();
-			mwohedContainer.setInt("VHCONO", cono);
-			mwohedContainer.setString("VHFACI", faci);
-			mwohedRecord.readAll(mwohedContainer, 2,10000,{  DBContainer mwohedData ->
-				mwoopeRecord = database.table("MWOOPE").index("00").selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
-				mwoopeContainer = mwoopeRecord.createContainer();
-				mwoopeContainer.setInt("VOCONO", cono);
-				mwoopeContainer.setString("VOFACI", faci);
-				mwoopeContainer.setString("VOPRNO", mwohedData.getString("VHPRNO"));
-				mwoopeContainer.setString("VOMFNO", mwohedData.getString("VHMFNO"));
-				mwoopeRecord.readAll(mwoopeContainer, 4, 200, { DBContainer mwoopeData ->
-					insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
-				});
-			});
-
-		}
-
-		saveLastUpdate(cono, faci, plgr, now);
 	}
 
 	/**
@@ -227,7 +157,7 @@ public class LstNOTES extends ExtendM3Transaction {
 		mwohedContainer.setString("VHMFNO", mwoopeData.getString("VOMFNO"));
 		mwohedRecord.read(mwohedContainer);
 
-		if(mwohedContainer.getString("VHWHST").equals("90") || mwohedContainer.getLong("VHSCHN") == 0 ) {
+		if(mwohedContainer.getString("VHWHST").equals("90") || mwohedContainer.getLong("VHSCHN") == 0 || mwoopeData.getString("VOWOST") == "90" ) {
 			exttr1Container.setInt("EXCONO", cono);
 			exttr1Container.setString("EXFACI", faci);
 			exttr1Container.setString("EXPLGR", plgr);
@@ -308,32 +238,6 @@ public class LstNOTES extends ExtendM3Transaction {
 	}
 
 	/**
-	 * Save in EXTPAR the date of the last update for plgr
-	 * @param cono
-	 * @param faci
-	 * @param plgr
-	 * @param lastUpdate
-	 */
-	private void saveLastUpdate(int cono, String faci, String plgr, long lastUpdate) {
-		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXN018").build();
-		DBContainer extparContainer = extparRecord.createContainer();
-		extparContainer.setInt("EXCONO", cono);
-		extparContainer.setString("EXFILE", "EXT005MI");
-		extparContainer.setString("EXPK01", "lastUpdate");
-		extparContainer.setString("EXPK02", faci);
-		extparContainer.setString("EXPK03", plgr);
-		if(!extparRecord.readLock(extparContainer,{LockedResult updatedRecord ->
-					updatedRecord.set("EXN018",  lastUpdate);
-					updateTrackingField(updatedRecord, "EX");
-					updatedRecord.update();
-				})) {
-			extparContainer.set("EXN018",  lastUpdate);;
-			insertTrackingField(extparContainer, "EX");
-			extparRecord.insert(extparContainer);
-		}
-	}
-
-	/**
 	 * build the list result
 	 * @param cono
 	 * @param faci
@@ -343,58 +247,24 @@ public class LstNOTES extends ExtendM3Transaction {
 	 * @param schsFilter if we want to filter SCHS equal to zero
 	 * @return
 	 */
-	private liste(int cono, String faci, String plgr, String lastUpd, String sourceTable, boolean schsFilter) {
+	private liste(int cono, String faci, String plgr) {
 		ExpressionFactory exttr1ExpressionFactory = database.getExpressionFactory("EXTTR1");
 		exttr1ExpressionFactory = exttr1ExpressionFactory.ne("EXSCHS", "0");
-		DBAction exttr1Record;
-		if(schsFilter)
-			exttr1Record = database.table("EXTTR1").index("00").matching(exttr1ExpressionFactory).selection("EXWOST","EXSCHS","EXGRP1","EXGRP2","EXGRP3","EXGRP4","EXGRP5","EXTIGE","EXSTDT","EXITDS").build();
-		else
-			exttr1Record = database.table("EXTTR1").index("00").selection("EXWOST","EXSCHS","EXGRP1","EXGRP2","EXGRP3","EXGRP4","EXGRP5","EXTIGE","EXSTDT","EXITDS").build();
+		DBAction exttr1Record = database.table("EXTTR1").index("00").selection("EXWOST","EXSCHS","EXGRP1","EXGRP2","EXGRP3","EXGRP4","EXGRP5","EXTIGE","EXSTDT","EXITDS").build();
 		DBContainer exttr1Container = exttr1Record.createContainer();
 		exttr1Container.setInt("EXCONO", cono);
 		exttr1Container.setString("EXFACI", faci);
 		exttr1Container.setString("EXPLGR", plgr);
 
 		long mere = 0;
-		String mtn1 = "";
-		double req1 = 0;
-		double rpq1 = 0;
-		String mtn2 = "";
-		double req2 = 0;
-		double rpq2 = 0;
 		long dess = 0;
-		int nmat = 0;
 
 		int wwopno = 0;
 		long wwmere = 0;
 		long schs = 0;
 		boolean firsLine = true;
-		List<String> list = ["E_COUPBR","E_CPDES","E_CPDOU","E_CPFOU","E_MAROCP"];
 		Double nbof = 0;
-		int nbRead = exttr1Record.readAll(exttr1Container, 3, 10000, { DBContainer exttr1Data ->
-
-			if(exttr1Data.getString("EXWOST").equals("90")) {
-				if(schsFilter)
-					return;
-
-				if(!list.contains(plgr))
-					return;
-
-				ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
-				mwoopeExpressionFactory = mwoopeExpressionFactory.eq("VOPRNO", exttr1Data.getString("EXPRNO")).and(mwoopeExpressionFactory.eq("VOMFNO", exttr1Data.getString("EXMFNO")));
-				DBAction mwoopeRecord = database.table("MWOOPE").index("70").matching(mwoopeExpressionFactory).build();
-				DBContainer mwoopeContainer = mwoopeRecord.createContainer();
-				mwoopeContainer.setInt("VOCONO", exttr1Data.getInt("EXCONO"));
-				mwoopeContainer.setString("VOFACI", exttr1Data.getString("EXFACI"));
-				mwoopeContainer.setString("VOPLGR", "S"+plgr.substring(1));
-				boolean sBipped = true;
-				mwoopeRecord.readAll(mwoopeContainer, 3, 1, { DBContainer mwoopeData ->
-					sBipped = false;
-				});
-				if(sBipped)
-					return;
-			}
+		int nbRead = exttr1Record.readAll(exttr1Container, 3, 1000, { DBContainer exttr1Data ->
 
 			if(firsLine) {
 				wwopno = exttr1Data.getInt("EXOPNO");
@@ -404,38 +274,7 @@ public class LstNOTES extends ExtendM3Transaction {
 			}
 
 			if(mere != exttr1Data.getLong("EXMERE")) {
-				mtn1 = "";
-				req1 = 0;
-				rpq1 = 0;
-				mtn2 = "";
-				req2 = 0;
-				rpq2 = 0;
 				dess = 0;
-				nmat = 0;
-				DBAction exttr2Record = database.table(sourceTable).index("10").selection("EXMTNO", "EXREQT", "EXRPQT").build();
-				DBContainer exttr2Container = exttr2Record.createContainer();
-				exttr2Container.setString("EXBJNO", "MATERIAL_CALC");
-				exttr2Container.setInt("EXCONO", exttr1Data.getInt("EXCONO"));
-				exttr2Container.setString("EXFACI", exttr1Data.getString("EXFACI"));
-				exttr2Container.setString("EXPLGR", plgr);
-				exttr2Container.set("EXMERE", exttr1Data.get("EXMERE"));
-				exttr2Container.setInt("EXOPNO", exttr1Data.getInt("EXOPNO"));
-
-				exttr2Record.readAll(exttr2Container, 5, 1000, { DBContainer exttr2Data ->
-					if(nmat == 0 || exttr2Data.getDouble("EXREQT") != 0) {
-						nmat ++;
-						if(nmat == 1) {
-							mtn1 = exttr2Data.getString("EXMTNO");
-							req1 = exttr2Data.getDouble("EXREQT");
-							rpq1 = exttr2Data.getDouble("EXRPQT");
-						}
-						if(nmat == 2) {
-							mtn2 = exttr2Data.getString("EXMTNO");
-							req2 = exttr2Data.getDouble("EXREQT");
-							rpq2 = exttr2Data.getDouble("EXRPQT");
-						}
-					}
-				});
 
 				DBAction mpdwctRecord = database.table("MPDWCT").selection("PPKIWG").build();
 				DBContainer mpdwctContainer = mpdwctRecord.createContainer();
@@ -486,23 +325,12 @@ public class LstNOTES extends ExtendM3Transaction {
 			mi.getOutData().put("GRP5", exttr1Data.getString("EXGRP5"));
 			mi.getOutData().put("NBOF", Math.round(nbof).toString());
 			mi.getOutData().put("TIGE", exttr1Data.getString("EXTIGE"));
-			mi.getOutData().put("NMAT", nmat.toString());
-			if(!mtn1.isBlank()) {
-				mi.getOutData().put("MTN1", mtn1);
-				mi.getOutData().put("REQ1", req1.toString());
-			}
-			if(req2> 0) {
-				mi.getOutData().put("MTN2", mtn2);
-				mi.getOutData().put("REQ2", req2.toString());
-			}
 			mi.getOutData().put("STDT", exttr1Data.get("EXSTDT").toString());
 			mi.getOutData().put("DESS", dess.toString());
 			mi.getOutData().put("STYL", exttr1Data.getString("EXGRP1").trim()+" "+exttr1Data.getString("EXGRP2").trim()+" "+exttr1Data.getString("EXGRP3").trim()+" "+exttr1Data.getString("EXGRP4").trim());
 			mi.getOutData().put("QDEB", "0");
-			mi.getOutData().put("RPQT", (rpq1+rpq2).toString());
 			mi.getOutData().put("ITDS", exttr1Data.getString("EXITDS"));
 			mi.getOutData().put("SCHS", schs.toString());
-			mi.getOutData().put("UPDT", lastUpd);
 			mi.getOutData().put("WOST", exttr1Data.getString("EXWOST"));
 		} );
 		if(nbRead > 0) {
