@@ -50,7 +50,7 @@ public class EXT003 extends ExtendM3Batch {
 
 		resetTables(CONO);
 
-		initOrig(CONO, FACI);
+		qualifOF(CONO, FACI);
 
 		fillEXTWR0(CONO, FACI);
 
@@ -59,14 +59,17 @@ public class EXT003 extends ExtendM3Batch {
 		calculTectRest(CONO, FACI);
 
 		if(!fillEXNOT(CONO, FACI)) {
+			clearTableNeed(CONO);
 			return;
 		}
 
 		creationNoteMerePrioritaire(CONO);
 
 		if(!creationNoteMere(CONO)) {
+			clearTableNeed(CONO);
 			return;
 		}
+		clearTableNeed(CONO);
 	}
 
 	/**
@@ -162,6 +165,13 @@ public class EXT003 extends ExtendM3Batch {
 			});
 		});
 
+	}
+
+	/**
+	 * Emptying the table of calculated needs.
+	 * @param cono
+	 */
+	private void clearTableNeed(Integer cono) {
 		DBAction besRecord = database.table("EXTBES").index("00").build();
 		DBContainer besContainer = besRecord.createContainer();
 		besContainer.setInt("EXCONO", cono);
@@ -942,42 +952,6 @@ public class EXT003 extends ExtendM3Batch {
 			}
 		});
 		return result;
-	}
-
-	/**
-	 * Calculate the priority of the fabrication orders.
-	 * @param cono
-	 * @param faci
-	 */
-	private void initOrig(int cono, String faci) {
-		collectOrig(cono, faci);
-		qualifOF(cono, faci);
-	}
-
-	/**
-	 * Calculate needs by priority.
-	 * @param cono
-	 * @param faci
-	 */
-	private void collectOrig(int cono, String faci) {
-		ExpressionFactory mitploExpressionFactory = database.getExpressionFactory("MITPLO");
-		mitploExpressionFactory = mitploExpressionFactory.lt("MOTRQT", "0").and(mitploExpressionFactory.ne("MOWHLO", "FMA"));
-
-		DBAction mitploRecord = database.table("MITPLO").index("30").matching(mitploExpressionFactory).selection("MOITNO","MOTRQT","MOORCA","MOTRTP").build();
-		DBContainer mitploContainer = mitploRecord.createContainer();
-		mitploContainer.setInt("MOCONO", cono);
-
-		mitploRecord.readAll(mitploContainer, 1, 200000,{ DBContainer MITPLOdata ->
-			DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMCHCD").build();
-			DBContainer mitmasContainer = mitmasRecord.createContainer();
-			mitmasContainer.setInt("MMCONO", cono);
-			mitmasContainer.setString("MMITNO", MITPLOdata.getString("MOITNO"));
-			mitmasRecord.read(mitmasContainer);
-			if(mitmasContainer.getInt("MMCHCD")==3) {
-				int origBesoin = getOrigineBesoin(cono, MITPLOdata.getString("MOORCA"), MITPLOdata.getString("MOTRTP"));
-				addTrqtExtbes("EXTRQ"+origBesoin, cono, faci, MITPLOdata.getString("MOITNO"), MITPLOdata.getDouble("MOTRQT"));
-			}
-		});
 	}
 
 	/**
