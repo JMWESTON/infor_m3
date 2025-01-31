@@ -173,8 +173,19 @@ public class LstPrpMat extends ExtendM3Transaction {
 		DBAction tr2Record = database.table("EXTTR2").index("00").build();
 		DBContainer tr2Container = tr2Record.createContainer();
 		tr2Container.setString("EXBJNO", bjno);
-		tr2Record.readAllLock(tr2Container,1,{LockedResult entry ->
-			entry.delete();
+		tr2Record.readAll(tr2Container, 1, 1000,{ DBContainer tr2Data ->
+			DBAction supTr2Record = database.table("EXTTR2").index("00").build();
+			DBContainer supTr2Container = supTr2Record.createContainer();
+			supTr2Container.setString("EXBJNO", bjno);
+			supTr2Container.setInt("EXCONO", tr2Data.getInt("EXCONO"));
+			supTr2Container.setString("EXFACI", tr2Data.getString("EXFACI"));
+			supTr2Container.setString("EXPLGR", tr2Data.getString("EXPLGR"));
+			supTr2Container.setLong("EXMERE", tr2Data.getLong("EXMERE"));
+			supTr2Container.setInt("EXOPNO", tr2Data.getInt("EXOPNO"));
+			supTr2Container.setString("EXMTNO", tr2Data.getString("EXMTNO"));
+			supTr2Record.readLock(tr2Container, {  LockedResult entry ->
+				entry.delete();
+			});
 		});
 	}
 
@@ -264,7 +275,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 		String mtno = "";
 		String fuds = "";
 
-		int nbRecords = exttr2Record.readAll(exttr2Container, 1, { DBContainer exttr2Data ->
+		int nbRecords = exttr2Record.readAll(exttr2Container, 1 , 1000, { DBContainer exttr2Data ->
 			DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMFUDS").build();
 			DBContainer mitmasContainer = mitmasRecord.createContainer();
 			mitmasContainer.setInt("MMCONO", cono);
