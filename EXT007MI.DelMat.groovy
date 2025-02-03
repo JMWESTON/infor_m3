@@ -11,12 +11,14 @@ public class DelMat extends ExtendM3Transaction {
 	private final ProgramAPI program;
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
+	private final MICallerAPI miCaller;
 
-	public DelMat(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
+	public DelMat(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
 		this.program = program;
 		this.database = database;
 		this.utility = utility;
+		this.miCaller = miCaller;
 	}
 
 	public void main() {
@@ -61,58 +63,12 @@ public class DelMat extends ExtendM3Transaction {
 			return;
 		}
 
-		DBAction exmat210Record = database.table("EXTMA2").index("10").selection("EXMTNO","EXREQT").build();
-		DBContainer exmat210Container = exmat210Record.createContainer();
-		exmat210Container.setInt("EXCONO", CONO);
-		exmat210Container.setString("EXFACI", FACI);
-		exmat210Container.setString("EXPLGR",PLGR);
-		exmat210Container.setLong("EXMERE", MERE);
-		exmat210Container.setInt("EXOPNO", OPNO);
-
-		int nbMat = 1;
-		String exmnt1 = "";
-		exmat210Record.readAll(exmat210Container, 5, 1000, {  DBContainer extma2Data ->
-			DBAction extma1Record = database.table("EXTMA1").index("00").build();
-			DBContainer extma1Container = extma1Record.createContainer();
-			extma1Container.setInt("EXCONO", extma2Data.getInt("EXCONO"));
-			extma1Container.setString("EXFACI", extma2Data.getString("EXFACI"));
-			extma1Container.setString("EXPLGR", extma2Data.getString("EXPLGR"));
-			extma1Container.setLong("EXMERE", extma2Data.getLong("EXMERE"));
-			extma1Container.setInt("EXOPNO",extma2Data.getInt("EXOPNO"));
-			if(nbMat == 1) {
-				exmnt1 = extma2Data.getString("EXMTNO");
-				extma1Container.setString("EXMTN1", exmnt1);
-				if(!extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-							updatedRecord.setDouble("EXRQT1", updatedRecord.getDouble("EXRQT1") + extma2Data.getDouble("EXREQT"))
-							updateTrackingField(updatedRecord, "EX");
-							updatedRecord.update();
-						})){
-					extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
-					insertTrackingField(extma1Container, "EX");
-					extma1Record.insert(extma1Container);
-				}
-			}else
-				if(nbMat == 2) {
-					extma1Container.setString("EXMTN1", exmnt1);
-					extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-						updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
-						updatedRecord.setDouble("EXRQT2", updatedRecord.getDouble("EXRQT2") + extma2Data.getDouble("EXREQT"))
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					});
-				}else {
-					extma1Container.setInt("EXNBMA", nbMat);
-					extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-						updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
-						updatedRecord.setDouble("EXRQT2", updatedRecord.getDouble("EXRQT2") + extma2Data.getDouble("EXREQT"))
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					});
-				}
-
-			nbMat++;
+		Map<String,String> parameters =  ["CONO":CONO.toString(),FACI:FACI,MERE:MERE.toString(),INDX:"10",PLGR:PLGR,OPNO:OPNO.toString(),NDEL:"1"];
+		miCaller.call("EXT007MI", "AgregMat", parameters , { Map<String, String> response ->
+			if(response.error) {
+				mi.error(response.errorMessage);
+			}
 		});
-
 	}
 
 	/**

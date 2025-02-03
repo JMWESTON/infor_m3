@@ -1,14 +1,24 @@
+/**
+ * README
+ *
+ * Name: EXT007MI.DelMatFromOF
+ * Description: Enlève quantité matière de l'OF dans la table extma2
+ * Date                         Changed By                    Description
+ * 20250131                     ddecosterd@hetic3.fr     		création
+ */
 public class DelMatFromOF extends ExtendM3Transaction {
 	private final MIAPI mi;
 	private final ProgramAPI program;
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
+	private final MICallerAPI miCaller;
 
-	public DelMatFromOF(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
+	public DelMatFromOF(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
 		this.program = program;
 		this.database = database;
 		this.utility = utility;
+		this.miCaller = miCaller;
 	}
 
 	public void main() {
@@ -58,56 +68,13 @@ public class DelMatFromOF extends ExtendM3Transaction {
 			});
 		});
 
-		DBAction exmat220Record = database.table("EXTMA2").index("20").selection("EXPLGR","EXOPNO","EXMTNO","EXREQT").build();
-		DBContainer exmat220Container = exmat220Record.createContainer();
-		exmat220Container.setInt("EXCONO", CONO);
-		exmat220Container.setString("EXFACI", FACI);
-		exmat220Container.setLong("EXMERE", SCHN);
-
-		int nbMat = 1;
-		String exmnt1 = "";
-		exmat220Record.readAll(exmat220Container, 3, 1000, {  DBContainer extma2Data ->
-			DBAction extma1Record = database.table("EXTMA1").index("00").selection("EXRQT1","EXRQT2","EXCHNO").build();
-			DBContainer extma1Container = extma1Record.createContainer();
-			extma1Container.setInt("EXCONO", extma2Data.getInt("EXCONO"));
-			extma1Container.setString("EXFACI", extma2Data.getString("EXFACI"));
-			extma1Container.setString("EXPLGR", extma2Data.getString("EXPLGR"));
-			extma1Container.setLong("EXMERE", extma2Data.getLong("EXMERE"));
-			extma1Container.setInt("EXOPNO",extma2Data.getInt("EXOPNO"));
-			if(nbMat == 1) {
-				exmnt1 = extma2Data.getString("EXMTNO");
-				extma1Container.setString("EXMTN1", exmnt1);
-				if(!extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-							updatedRecord.setDouble("EXRQT1", updatedRecord.getDouble("EXRQT1") + extma2Data.getDouble("EXREQT"))
-							updateTrackingField(updatedRecord, "EX");
-							updatedRecord.update();
-						})){
-					extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
-					insertTrackingField(extma1Container, "EX");
-					extma1Record.insert(extma1Container);
-				}
-			}else
-				if(nbMat == 2) {
-					extma1Container.setString("EXMTN1", exmnt1);
-					extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-						updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
-						updatedRecord.setDouble("EXRQT2", updatedRecord.getDouble("EXRQT2") + extma2Data.getDouble("EXREQT"))
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					});
-				}else {
-					extma1Container.setInt("EXNBMA", nbMat);
-					extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-						updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
-						updatedRecord.setDouble("EXRQT2", updatedRecord.getDouble("EXRQT2") + extma2Data.getDouble("EXREQT"))
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					});
-				}
-
-			nbMat++;
+		Map<String,String> parameters =  ["CONO":CONO.toString(),FACI:FACI,MERE:SCHN.toString(),INDX:"20",NDEL:"1"];
+		miCaller.call("EXT007MI", "AgregMat", parameters , { Map<String, String> response ->
+			if(response.error) {
+				mi.error(response.errorMessage);
+			}
 		});
-		}
+	}
 
 	/**
 	 * Check input values
@@ -162,7 +129,7 @@ public class DelMatFromOF extends ExtendM3Transaction {
 
 		return true;
 	}
-	
+
 	/**
 	 *  Add default value for new record.
 	 * @param insertedRecord
