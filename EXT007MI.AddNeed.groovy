@@ -1,4 +1,12 @@
 
+/**
+ * README
+ *
+ * Name: EXT007MI.AddNeed
+ * Description: Add need to table EXTBES
+ * Date                         Changed By                    Description
+ * 20250131                     ddecosterd@hetic3.fr     		création
+ */
 public class AddNeed extends ExtendM3Transaction {
 	private final MIAPI mi;
 	private final ProgramAPI program;
@@ -49,23 +57,23 @@ public class AddNeed extends ExtendM3Transaction {
 		extbesContainer.setString("EXPRNO", PRNO);
 
 		if(!extbesRecord.readLock(extbesContainer, { LockedResult updateRecoord ->
-			updateRecoord.setDouble("EXTRQ0", updateRecoord.getDouble("EXTRQ0") - TRQ0);
-			updateRecoord.setDouble("EXTRQ1", updateRecoord.getDouble("EXTRQ1") - TRQ1);
-			updateRecoord.setDouble("EXTRQ2", updateRecoord.getDouble("EXTRQ2") - TRQ2);
-			updateRecoord.setDouble("EXTRQ3", updateRecoord.getDouble("EXTRQ3") - TRQ3);
-			updateRecoord.setDouble("EXTRQ4", updateRecoord.getDouble("EXTRQ4") - TRQ4);
-			updateRecoord.setDouble("EXTRQ5", updateRecoord.getDouble("EXTRQ5") - TRQ5);
-			updateRecoord.setDouble("EXTRQ6", updateRecoord.getDouble("EXTRQ6") - TRQ6);
-			updateRecoord.setDouble("EXTRQ7", updateRecoord.getDouble("EXTRQ7") - TRQ7);
-			updateRecoord.setDouble("EXTRQ8", updateRecoord.getDouble("EXTRQ8") - TRQ8);
-			updateRecoord.setDouble("EXTRQ9", updateRecoord.getDouble("EXTRQ9") - TRQ9);
-			int CHNO = updateRecoord.getInt("EXCHNO");
-			if(CHNO== 999) {CHNO = 0;}
-			updateRecoord.set("EXLMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
-			updateRecoord.set("EXCHID", program.getUser());
-			updateRecoord.setInt("EXCHNO", CHNO);
-			updateRecoord.update();
-		})) {
+					updateRecoord.setDouble("EXTRQ0", updateRecoord.getDouble("EXTRQ0") - TRQ0);
+					updateRecoord.setDouble("EXTRQ1", updateRecoord.getDouble("EXTRQ1") - TRQ1);
+					updateRecoord.setDouble("EXTRQ2", updateRecoord.getDouble("EXTRQ2") - TRQ2);
+					updateRecoord.setDouble("EXTRQ3", updateRecoord.getDouble("EXTRQ3") - TRQ3);
+					updateRecoord.setDouble("EXTRQ4", updateRecoord.getDouble("EXTRQ4") - TRQ4);
+					updateRecoord.setDouble("EXTRQ5", updateRecoord.getDouble("EXTRQ5") - TRQ5);
+					updateRecoord.setDouble("EXTRQ6", updateRecoord.getDouble("EXTRQ6") - TRQ6);
+					updateRecoord.setDouble("EXTRQ7", updateRecoord.getDouble("EXTRQ7") - TRQ7);
+					updateRecoord.setDouble("EXTRQ8", updateRecoord.getDouble("EXTRQ8") - TRQ8);
+					updateRecoord.setDouble("EXTRQ9", updateRecoord.getDouble("EXTRQ9") - TRQ9);
+					int CHNO = updateRecoord.getInt("EXCHNO");
+					if(CHNO== 999) {CHNO = 0;}
+					updateRecoord.set("EXLMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
+					updateRecoord.set("EXCHID", program.getUser());
+					updateRecoord.setInt("EXCHNO", CHNO);
+					updateRecoord.update();
+				})) {
 			extbesContainer.setDouble("EXTRQ0", -TRQ0);
 			extbesContainer.setDouble("EXTRQ1", -TRQ1);
 			extbesContainer.setDouble("EXTRQ2", -TRQ2);
@@ -97,7 +105,7 @@ public class AddNeed extends ExtendM3Transaction {
 	 * @return true if no error.
 	 */
 	private boolean checkInputs(Integer cono, String  faci, String prno, Double trq0, Double trq1, Double trq2, Double trq3,
-	Double trq4, Double trq5, Double trq6, Double trq7, Double trq8, Double trq9 ) {
+			Double trq4, Double trq5, Double trq6, Double trq7, Double trq8, Double trq9 ) {
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return false;
