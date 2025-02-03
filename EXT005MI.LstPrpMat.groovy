@@ -13,7 +13,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
 
-	private String CUS_MORCEAU;
+	private String cusMorceau;
 
 	public LstPrpMat(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.mi = mi;
@@ -83,7 +83,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 		CUGEX1Container.setString("F1FILE", "EXTEND");
 		CUGEX1Container.setString("F1PK01", "IPRD002");
 		if(CUGEX1Record.read(CUGEX1Container)) {
-			CUS_MORCEAU = CUGEX1Container.getString("F1A230");
+			cusMorceau = CUGEX1Container.getString("F1A230");
 		}
 
 	}
@@ -230,7 +230,7 @@ public class LstPrpMat extends ExtendM3Transaction {
 				mitmasContainer.setString("MMITNO", mwomatData.getString("VMMTNO"));
 				mitmasRecord.read(mitmasContainer);
 
-				if( mwomatData.getInt("VMBYPR") == 1 && mitmasContainer.getString("MMGRTI").equals(CUS_MORCEAU) ||  mrcx == 0) {
+				if( mwomatData.getInt("VMBYPR") == 1 && mitmasContainer.getString("MMGRTI").equals(cusMorceau) ||  mrcx == 0) {
 					DBAction exttr2Record = database.table("EXTTR2").index("00").selection("EXREQT", "EXRPQT").build();
 					DBContainer exttr2Container = exttr2Record.createContainer();
 					exttr2Container.setString("EXBJNO", bjno);
