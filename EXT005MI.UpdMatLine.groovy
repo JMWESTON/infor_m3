@@ -302,7 +302,7 @@ public class UpdMatLine extends ExtendM3Transaction {
 			mwomat12Container.setString("VMMFNO", mwoopeData.getString("VOMFNO"));
 			mwomat12Container.setInt("VMOPNO", mwoopeData.getInt("VOOPNO"));
 
-			mwomat12Record.readAll(mwomat12Container, 5, 1000, { DBContainer mwomatData ->
+			mwomat12Record.readAll(mwomat12Container, 5, 30, { DBContainer mwomatData ->
 				if(mwomatData.getDouble("VMRPQT") != 0) {
 					wwAjout = true;
 				}
