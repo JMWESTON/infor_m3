@@ -12,32 +12,39 @@ public class EXT003 extends ExtendM3Batch {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
-	private final LoggerAPI logger;
 
 	private String errorMessage = "";
 
 	private boolean capping = false;
 	private int defaultNPPN = 10;
 	private int defaultNSPN = 3;
-	private List<int[]> corresFomrStock = [];
+	private List<double[]> corresFomrStock = [];
 
-	public EXT003(ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller, LoggerAPI logger) {
+	public EXT003(ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller) {
 		this.program = program;
 		this.database = database;
 		this.utility = utility;
 		this.miCaller = miCaller;
-		this.logger = logger;
 	}
 
 	public void main() {
 		Integer CONO = program.getLDAZD().CONO;
 
-		String  FACI = program.getLDAZD().FACI;
+		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1A030","F1CHB1","F1CHB2").build();
+		DBContainer cugex1Container = cugex1Record.createContainer();
+		cugex1Container.setInt("F1CONO", CONO);
+		cugex1Container.setString("F1FILE", "BATCH");
+		cugex1Container.setString("F1PK01", "EXT003");
+
+		if(!cugex1Record.read(cugex1Container))
+			return;
+
+		String  FACI = cugex1Container.getString("F1A030");
 
 		if(!checkInputs(CONO, FACI))
 			return;
 
-		init(CONO, FACI);
+		init(CONO);
 
 		resetTables(CONO);
 
@@ -80,7 +87,7 @@ public class EXT003 extends ExtendM3Batch {
 		}
 
 		if(faci.isEmpty()) {
-			miCaller.call("EXT001MI","AddError", ["CONO":cono.toString(),"IFID":"BATCH","FILE":"EXT003", "ERRM":"L'établissement est obligatoire."],{});
+			miCaller.call("EXT001MI","AddError", ["CONO":cono.toString(),"IFID":"BATCH","FILE":"EXT003", "ERRM":"L'établissement est obligatoire. Vérifiez le paramétrage CUGEX01."],{});
 			return false;
 		}
 		if(!utility.call("CheckUtil", "checkFacilityExist", database, cono, faci)) {
@@ -182,31 +189,26 @@ public class EXT003 extends ExtendM3Batch {
 	 * Get configuration values
 	 * @param cono
 	 */
-	private void init(int cono, String faci) {
-		DBAction extparRecord = database.table("EXTPAR").index("00").selection("EXNPPN","EXNSPN","EXCAPP").build();
-		DBContainer extparContainer = extparRecord.createContainer();
-		extparContainer.setInt("EXCONO", cono);
-		extparContainer.setString("EXFACI", faci);
-
-		if(extparRecord.read(extparContainer)) {
-			capping = extparContainer.getInt("EXCAPP") == 1;
-			defaultNPPN = extparContainer.get("EXNPPN");
-			defaultNSPN = extparContainer.get("EXNSPN");
-		}else {
-			extparContainer.setInt("EXCAPP", capping ? 1:0);
-			extparContainer.set("EXNPPN", defaultNPPN);
-			extparContainer.set("EXNSPN", defaultNSPN);
-
-			insertTrackingField(extparContainer);
-			extparRecord.insert(extparContainer);
+	private void init(int cono) {
+		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196","F1CHB1").build();
+		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
+		CUGEX1Container.setInt("F1CONO", cono);
+		CUGEX1Container.setString("F1FILE", "EXT003");
+		CUGEX1Container.setString("F1PK01", "DEFAUT");
+		if(CUGEX1Record.read(CUGEX1Container)) {
+			capping = CUGEX1Container.getInt("F1CHB1") == 1;
+			defaultNPPN = CUGEX1Container.get("F1N096");
+			defaultNSPN = CUGEX1Container.get("F1N196");
 		}
 
-		DBAction extfqtRecord = database.table("EXTFQT").index("00").selection("EXLSTK","EXNSPN").build();
-		DBContainer extftqContainer = extfqtRecord.createContainer();
-		extftqContainer.setInt("EXCONO", cono);
-		extftqContainer.setString("EXFACI", faci);
-		extfqtRecord.readAll(extftqContainer, 2,100,{
-			corresFomrStock.push([extftqContainer.getInt("EXLSTK"),extftqContainer.getInt("EXN118")] as int[]);
+		ExpressionFactory CUGEXExpressionFactory = database.getExpressionFactory("CUGEX1");
+		CUGEXExpressionFactory =  CUGEXExpressionFactory.between("F1PK02","10","100");
+		CUGEX1Record = database.table("CUGEX1").index("00").matching(CUGEXExpressionFactory).selection("F1N096","F1N196").build();
+		CUGEX1Container = CUGEX1Record.createContainer();
+		CUGEX1Container.setString("F1FILE", "EXT003");
+		CUGEX1Container.setString("F1PK01", "NSPN");
+		CUGEX1Record.readAll(CUGEX1Container, 2, {
+			corresFomrStock.push([CUGEX1Container.getDouble("F1N096"),CUGEX1Container.getDouble("F1N196")] as double[]);
 		});
 	}
 
@@ -270,9 +272,9 @@ public class EXT003 extends ExtendM3Batch {
 			ITMAHContainer.setString("HMITNO", MMOPLPdata.getString("ROPRNO"));
 			if(ITMAHRecord.read(ITMAHContainer)) {
 
-				NPPN = getNPPN(cono, faci, ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMGRP1"), ITMASContainer.getString("MMGRP2"), ITMASContainer.getString("MMGRP3"),
+				NPPN = getNPPN(cono, ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMGRP1"), ITMASContainer.getString("MMGRP2"), ITMASContainer.getString("MMGRP3"),
 						ITMASContainer.getString("MMGRTI"));
-				NSPN = getNSPN(cono, faci, MMOPLPdata.getString("ROPRNO"), ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMHDPR"), ITMAHContainer.getString("HMTX15"),
+				NSPN = getNSPN(cono, MMOPLPdata.getString("ROPRNO"), ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMHDPR"), ITMAHContainer.getString("HMTX15"),
 						ITMAHContainer.getString("HMTY15"), ITMASContainer.getString("MMGRTI"));
 
 				DBAction wr0Record = database.table("EXTWR0").index("00").build();
@@ -301,7 +303,7 @@ public class EXT003 extends ExtendM3Batch {
 	}
 
 	/**
-	 * Lit la table EXTPPN pour le paramétrage du nombre d'OF par note.
+	 * Lit la table CUGEX1 FILE=PRD001 et PK01=NPPN pour le paramétrage du nombre d'OF par note.
 	 * @param cono
 	 * @param tpli
 	 * @param grp1
@@ -310,57 +312,48 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param grti
 	 * @return nombre d'OF maxi par note.
 	 */
-	private int getNPPN(Integer cono, String faci,  String tpli, String grp1, String grp2, String grp3, String grti) {
+	private int getNPPN(Integer cono, String tpli, String grp1, String grp2, String grp3, String grti) {
 		int NPPN = 0;
 
-		DBAction extppnRecord = database.table("EXTPPN").index("00").selection("EXNPPN").build();
-		DBContainer extppnContainer = extppnRecord.createContainer();
-		extppnContainer.setInt("EXCONO", cono);
-		extppnContainer.setString("EXFACI", faci);
-		extppnContainer.setString("EXTPLI", tpli );
-		extppnRecord.readAll(extppnContainer, 3, 1,{DBContainer extppnData ->
-			NPPN = extppnData.getInt("EXNPPN");
-		});
-		if(NPPN == 0) {
-			extppnRecord = database.table("EXTPPN").index("10").selection("EXNPPN").build();
-			extppnContainer = extppnRecord.createContainer();
-			extppnContainer.setInt("EXCONO", cono);
-			extppnContainer.setString("EXFACI", faci);
-			extppnContainer.setString("EXGRP2", grp2 );
-			extppnRecord.readAll(extppnContainer, 3, 1,{DBContainer extppnData ->
-				NPPN = extppnData.getInt("EXNPPN");
-			});
+		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196").build();
+		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
+		CUGEX1Container.setInt("F1CONO", cono);
+		CUGEX1Container.setString("F1FILE", "EXT003");
+		CUGEX1Container.setString("F1PK01",  'NPPN');
+		CUGEX1Container.setString("F1PK02",  'STYLE');
+		CUGEX1Container.setString("F1PK03", tpli );
+		if(CUGEX1Record.read(CUGEX1Container)) {
+			NPPN = CUGEX1Container.get("F1N096");
 		}
 		if(NPPN == 0) {
-			extppnRecord = database.table("EXTPPN").index("20").selection("EXNPPN").build();
-			extppnContainer = extppnRecord.createContainer();
-			extppnContainer.setInt("EXCONO", cono);
-			extppnContainer.setString("EXFACI", faci);
-			extppnContainer.setString("EXGRP1", grp1 );
-			extppnContainer.setString("EXGRP3", grp3 );
-			extppnRecord.readAll(extppnContainer, 4, 1,{DBContainer extppnData ->
-				NPPN = extppnData.getInt("EXNPPN");
-			});
+			CUGEX1Container.setString("F1PK02",  'TIGE');
+			CUGEX1Container.setString("F1PK03", grp2 );
+			if(CUGEX1Record.read(CUGEX1Container)) {
+				NPPN = CUGEX1Container.get("F1N096");
+			}
 		}
 		if(NPPN == 0) {
-			extppnRecord = database.table("EXTPPN").index("30").selection("EXNPPN").build();
-			extppnContainer = extppnRecord.createContainer();
-			extppnContainer.setInt("EXCONO", cono);
-			extppnContainer.setString("EXFACI", faci);
-			extppnContainer.setString("EXGRP1", grp1 );
-			extppnRecord.readAll(extppnContainer, 3, 1,{DBContainer extppnData ->
-				NPPN = extppnData.getInt("EXNPPN");
-			});
+			CUGEX1Container.setString("F1PK02",  'FORME_ET_PATRONNAGE');
+			CUGEX1Container.setString("F1PK03", grp1 );
+			CUGEX1Container.setString("F1PK04", grp3 );
+			if(CUGEX1Record.read(CUGEX1Container)) {
+				NPPN = CUGEX1Container.get("F1N096");
+			}
+		}
+		CUGEX1Container.setString("F1PK04", "" );
+		if(NPPN == 0) {
+			CUGEX1Container.setString("F1PK02",  'FORME');
+			CUGEX1Container.setString("F1PK03", grp1 );
+			if(CUGEX1Record.read(CUGEX1Container)) {
+				NPPN = CUGEX1Container.get("F1N096");
+			}
 		}
 		if(NPPN == 0) {
-			extppnRecord = database.table("EXTPPN").index("40").selection("EXNPPN").build();
-			extppnContainer = extppnRecord.createContainer();
-			extppnContainer.setInt("EXCONO", cono);
-			extppnContainer.setString("EXFACI", faci);
-			extppnContainer.setString("EXGRTI", grti );
-			extppnRecord.readAll(extppnContainer, 3, 1,{DBContainer extppnData ->
-				NPPN = extppnData.getInt("EXNPPN");
-			});
+			CUGEX1Container.setString("F1PK02",  'GRP_TECHNO');
+			CUGEX1Container.setString("F1PK03", grti );
+			if(CUGEX1Record.read(CUGEX1Container)) {
+				NPPN = CUGEX1Container.get("F1N096");
+			}
 		}
 		if(NPPN == 0) {
 			NPPN = defaultNPPN;
@@ -370,7 +363,7 @@ public class EXT003 extends ExtendM3Batch {
 	}
 
 	/**
-	 * Lit la table EXSPN pour le paramétrage du nombre de SKU identique par note.
+	 * Lit la table CUGEX1 FILE=PRD001 et PK01=NSPN pour le paramétrage du nombre de SKU identique par note.
 	 * @param cono
 	 * @param prno
 	 * @param tpli
@@ -380,25 +373,24 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param grti
 	 * @return nombre de SKU identique par note.
 	 */
-	private int getNSPN(Integer cono, String faci, String prno, String tpli, String hdpr, String TX15, String TY15, String grti) {
+	private int getNSPN(Integer cono, String prno, String tpli, String hdpr, String TX15, String TY15, String grti) {
 		int NSPN = 0;
-		DBAction extspnRecord = database.table("EXTSPN").index("00").selection("EXNSPN").build();
-		DBContainer extspnContainer = extspnRecord.createContainer();
-		extspnContainer.setInt("EXCONO", cono);
-		extspnContainer.setString("EXFACI", faci);
-		extspnContainer.setString("EXPRNO", prno );
-		extspnRecord.readAll(extspnContainer, 3, 1,{DBContainer extspnData ->
-			NSPN = extspnData.getInt("EXNSPN");
-		});
+		DBAction CUGEX1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196").build();
+		DBContainer CUGEX1Container = CUGEX1Record.createContainer();
+		CUGEX1Container.setInt("F1CONO", cono);
+		CUGEX1Container.setString("F1FILE", "EXT003");
+		CUGEX1Container.setString("F1PK01",  'NSPN');
+		CUGEX1Container.setString("F1PK02",  'SKU');
+		CUGEX1Container.setString("F1PK03", prno );
+		if(CUGEX1Record.read(CUGEX1Container)) {
+			NSPN = CUGEX1Container.get("F1N096");
+		}
 		if(NSPN == 0) {
-			extspnRecord = database.table("EXTSPN").index("10").selection("EXNSPN").build();
-			extspnContainer = extspnRecord.createContainer();
-			extspnContainer.setInt("EXCONO", cono);
-			extspnContainer.setString("EXFACI", faci);
-			extspnContainer.setString("EXTPLI",  tpli);
-			extspnRecord.readAll(extspnContainer, 3, 1,{DBContainer extspnData ->
-				NSPN = extspnData.getInt("EXNSPN");
-			});
+			CUGEX1Container.setString("F1PK02",  'STYLE');
+			CUGEX1Container.setString("F1PK03", tpli );
+			if(CUGEX1Record.read(CUGEX1Container)) {
+				NSPN = CUGEX1Container.get("F1N096");
+			}
 		}
 		if(NSPN == 0 && !corresFomrStock.empty) {
 			DBAction mitmasRecord = database.table("MITMAS").index("00").selection("MMGRP1").build();
@@ -427,14 +419,11 @@ public class EXT003 extends ExtendM3Batch {
 			}
 		}
 		if(NSPN == 0) {
-			extspnRecord = database.table("EXTSPN").index("10").selection("EXNSPN").build();
-			extspnContainer = extspnRecord.createContainer();
-			extspnContainer.setInt("EXCONO", cono);
-			extspnContainer.setString("EXFACI", faci);
-			extspnContainer.setString("EXGRTI",  grti);
-			extspnRecord.readAll(extspnContainer, 3, 1,{DBContainer extspnData ->
-				NSPN = extspnData.getInt("EXNSPN");
-			});
+			CUGEX1Container.setString("F1PK02",  'GRP_TECHNO');
+			CUGEX1Container.setString("F1PK03", grti );
+			if(CUGEX1Record.read(CUGEX1Container)) {
+				NSPN = CUGEX1Container.get("F1N096");
+			}
 		}
 		if(NSPN == 0) {
 			NSPN = defaultNSPN;
