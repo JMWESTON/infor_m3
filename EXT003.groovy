@@ -982,7 +982,7 @@ public class EXT003 extends ExtendM3Batch {
 				mwohedContainer.setString("VHPRNO", extbesUpdate.getString("EXPRNO"));
 				boolean besUpdated = false;
 
-				mwohedRecord.readAll(mwohedContainer, 3, 1000, {  DBContainer mwohedData ->
+				mwohedRecord.readAll(mwohedContainer, 3, 100, {  DBContainer mwohedData ->
 					if(mwohedData.getDouble("VHMAQT") >= mwohedData.getDouble("VHORQT"))
 						return;
 					String schn = ""+mwohedData.getLong("VHSCHN");
