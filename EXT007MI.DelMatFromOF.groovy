@@ -130,30 +130,4 @@ public class DelMatFromOF extends ExtendM3Transaction {
 		return true;
 	}
 
-	/**
-	 *  Add default value for new record.
-	 * @param insertedRecord
-	 * @param prefix The column prefix of the table.
-	 */
-	private void insertTrackingField(DBContainer insertedRecord, String prefix) {
-		insertedRecord.set(prefix+"RGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
-		insertedRecord.set(prefix+"CHID", program.getUser());
-		insertedRecord.set(prefix+"RGTM", (Integer) utility.call("DateUtil", "currentTimeAsInt"));
-		insertedRecord.set(prefix+"CHNO", 1);
-	}
-
-	/**
-	 *  Add default value for updated record.
-	 * @param updatedRecord
-	 * @param prefix The column prefix of the table.
-	 */
-	private void updateTrackingField(LockedResult updatedRecord, String prefix) {
-		int CHNO = updatedRecord.getInt(prefix+"CHNO");
-		if(CHNO== 999) {CHNO = 0;}
-		CHNO++;
-		updatedRecord.set(prefix+"LMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
-		updatedRecord.set(prefix+"CHID", program.getUser());
-		updatedRecord.setInt(prefix+"CHNO", CHNO);
-	}
 }
