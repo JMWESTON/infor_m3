@@ -12,7 +12,7 @@ public class EXT003 extends ExtendM3Batch {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
-
+	
 	private String errorMessage = "";
 
 	private boolean capping = false;
@@ -49,20 +49,20 @@ public class EXT003 extends ExtendM3Batch {
 		resetTables(CONO);
 
 		qualifOF(CONO, FACI);
-
+		
 		fillEXTWR0(CONO, FACI);
-
+		
 		fillWr3Wr2(CONO, FACI);
-
+		
 		calculTectRest(CONO, FACI);
-
+		
 		if(!fillEXNOT(CONO, FACI)) {
 			clearTableNeed(CONO);
 			return;
 		}
-
+		
 		creationNoteMerePrioritaire(CONO);
-
+		
 		if(!creationNoteMere(CONO)) {
 			clearTableNeed(CONO);
 			return;
@@ -107,62 +107,73 @@ public class EXT003 extends ExtendM3Batch {
 		DBAction wr0Record = database.table("EXTWR0").index("00").build();
 		DBContainer wr0Container = wr0Record.createContainer();
 		wr0Container.setInt("EXCONO", cono);
-		wr0Record.readAll(wr0Container,1,30000,{DBContainer wr0Data ->
-			DBAction wr0UpdateRecord = database.table("EXTWR0").index("00").build();
-			DBContainer wr0UpdateContainer = wr0UpdateRecord.createContainer();
-			wr0UpdateContainer.setInt("EXCONO", wr0Data.getInt("EXCONO"));
-			wr0UpdateContainer.setString("EXFACI", wr0Data.getString("EXFACI"));
-			wr0UpdateContainer.setString("EXHDPR", wr0Data.getString("EXHDPR"));
-			wr0UpdateContainer.setString("EXPRNO", wr0Data.getString("EXPRNO"));
-			wr0UpdateContainer.setInt("EXPLPN", wr0Data.getInt("EXPLPN"));
-			wr0UpdateContainer.setInt("EXPLDT", wr0Data.getInt("EXPLDT"));
-			wr0UpdateRecord.readLock(wr0UpdateContainer, {LockedResult entry ->
-				entry.delete();
+		int read = 10000;
+		while(read == 10000) {
+			read = wr0Record.readAll(wr0Container,1,10000,{DBContainer wr0Data ->
+				DBAction wr0UpdateRecord = database.table("EXTWR0").index("00").build();
+				DBContainer wr0UpdateContainer = wr0UpdateRecord.createContainer();
+				wr0UpdateContainer.setInt("EXCONO", wr0Data.getInt("EXCONO"));
+				wr0UpdateContainer.setString("EXFACI", wr0Data.getString("EXFACI"));
+				wr0UpdateContainer.setString("EXHDPR", wr0Data.getString("EXHDPR"));
+				wr0UpdateContainer.setString("EXPRNO", wr0Data.getString("EXPRNO"));
+				wr0UpdateContainer.setInt("EXPLPN", wr0Data.getInt("EXPLPN"));
+				wr0UpdateContainer.setInt("EXPLDT", wr0Data.getInt("EXPLDT"));
+				wr0UpdateRecord.readLock(wr0UpdateContainer, {LockedResult entry ->
+					entry.delete();
+				});
 			});
-		});
+		}
 
 		DBAction wr3Record = database.table("EXTWR3").index("00").build();
 		DBContainer wr3Container = wr3Record.createContainer();
 		wr3Container.setInt("EXCONO", cono);
-		wr3Record.readAll(wr3Container,1,15000,{DBContainer wr3Data ->
-			DBAction wr3UpdateRecord = database.table("EXTWR3").index("00").build();
-			DBContainer wr3UpdateContainer = wr3UpdateRecord.createContainer();
-			wr3UpdateContainer.setInt("EXCONO", wr3Data.getInt("EXCONO"));
-			wr3UpdateContainer.setString("EXFACI", wr3Data.getString("EXFACI"));
-			wr3UpdateContainer.setString("EXHDPR", wr3Data.getString("EXHDPR"));
-			wr3UpdateContainer.setString("EXPRNO", wr3Data.getString("EXPRNO"));
-			wr3UpdateRecord.readLock(wr3UpdateContainer, {LockedResult entry ->
-				entry.delete();
+		read = 10000;
+		while(read == 10000) {
+			read = wr3Record.readAll(wr3Container,1,10000,{DBContainer wr3Data ->
+				DBAction wr3UpdateRecord = database.table("EXTWR3").index("00").build();
+				DBContainer wr3UpdateContainer = wr3UpdateRecord.createContainer();
+				wr3UpdateContainer.setInt("EXCONO", wr3Data.getInt("EXCONO"));
+				wr3UpdateContainer.setString("EXFACI", wr3Data.getString("EXFACI"));
+				wr3UpdateContainer.setString("EXHDPR", wr3Data.getString("EXHDPR"));
+				wr3UpdateContainer.setString("EXPRNO", wr3Data.getString("EXPRNO"));
+				wr3UpdateRecord.readLock(wr3UpdateContainer, {LockedResult entry ->
+					entry.delete();
+				});
 			});
-		});
+		}
 
 		DBAction wr2Record = database.table("EXTWR2").index("00").build();
 		DBContainer wr2Container = wr2Record.createContainer();
 		wr2Container.setInt("EXCONO", cono);
-		wr2Record.readAll(wr2Container,1,5000,{DBContainer wr2Data ->
-			DBAction wr2UpdateRecord = database.table("EXTWR2").index("00").build();
-			DBContainer wr2UpdateContainer = wr2UpdateRecord.createContainer();
-			wr2UpdateContainer.setInt("EXCONO", wr2Data.getInt("EXCONO"));
-			wr2UpdateContainer.setString("EXFACI", wr2Data.getString("EXFACI"));
-			wr2UpdateContainer.setString("EXHDPR", wr2Data.getString("EXHDPR"));
-			wr2UpdateRecord.readLock(wr2UpdateContainer, {LockedResult entry ->
-				entry.delete();
+		read = 10000;
+		while(read == 10000) {
+			read  =wr2Record.readAll(wr2Container,1,10000,{DBContainer wr2Data ->
+				DBAction wr2UpdateRecord = database.table("EXTWR2").index("00").build();
+				DBContainer wr2UpdateContainer = wr2UpdateRecord.createContainer();
+				wr2UpdateContainer.setInt("EXCONO", wr2Data.getInt("EXCONO"));
+				wr2UpdateContainer.setString("EXFACI", wr2Data.getString("EXFACI"));
+				wr2UpdateContainer.setString("EXHDPR", wr2Data.getString("EXHDPR"));
+				wr2UpdateRecord.readLock(wr2UpdateContainer, {LockedResult entry ->
+					entry.delete();
+				});
 			});
-		});
+		}
 
 		DBAction notRecord = database.table("EXTNOT").index("00").build();
 		DBContainer notContainer = notRecord.createContainer();
 		notContainer.setInt("EXCONO", cono);
-		notRecord.readAll(notContainer,1,6000,{DBContainer notData ->
-			DBAction notUpdateRecord = database.table("EXTNOT").index("00").build();
-			DBContainer notUpdateContainer = notUpdateRecord.createContainer();
-			notUpdateContainer.setInt("EXCONO", notData.getInt("EXCONO"));
-			notUpdateContainer.setLong("EXSCHN", notData.getLong("EXSCHN"));
-			notUpdateRecord.readLock(notUpdateContainer, {LockedResult entry ->
-				entry.delete();
+		read = 10000;
+		while(read == 10000) {
+			read = notRecord.readAll(notContainer,1,10000,{DBContainer notData ->
+				DBAction notUpdateRecord = database.table("EXTNOT").index("00").build();
+				DBContainer notUpdateContainer = notUpdateRecord.createContainer();
+				notUpdateContainer.setInt("EXCONO", notData.getInt("EXCONO"));
+				notUpdateContainer.setLong("EXSCHN", notData.getLong("EXSCHN"));
+				notUpdateRecord.readLock(notUpdateContainer, {LockedResult entry ->
+					entry.delete();
+				});
 			});
-		});
-
+		}
 	}
 
 	/**
@@ -173,16 +184,19 @@ public class EXT003 extends ExtendM3Batch {
 		DBAction besRecord = database.table("EXTBES").index("00").build();
 		DBContainer besContainer = besRecord.createContainer();
 		besContainer.setInt("EXCONO", cono);
-		besRecord.readAll(besContainer,1,50000,{DBContainer besData ->
-			DBAction besUpdateRecord = database.table("EXTBES").index("00").build();
-			DBContainer besUpdateContainer = besUpdateRecord.createContainer();
-			besUpdateContainer.setInt("EXCONO", besData.getInt("EXCONO"));
-			besUpdateContainer.setString("EXFACI", besData.getString("EXFACI"));
-			besUpdateContainer.setString("EXPRNO", besData.getString("EXPRNO"));
-			besUpdateRecord.readLock(besUpdateContainer, {LockedResult entry ->
-				entry.delete();
+		int read = 10000;
+		while(read == 10000) {
+			read = besRecord.readAll(besContainer,1,10000,{DBContainer besData ->
+				DBAction besUpdateRecord = database.table("EXTBES").index("00").build();
+				DBContainer besUpdateContainer = besUpdateRecord.createContainer();
+				besUpdateContainer.setInt("EXCONO", besData.getInt("EXCONO"));
+				besUpdateContainer.setString("EXFACI", besData.getString("EXFACI"));
+				besUpdateContainer.setString("EXPRNO", besData.getString("EXPRNO"));
+				besUpdateRecord.readLock(besUpdateContainer, {LockedResult entry ->
+					entry.delete();
+				});
 			});
-		});
+		}
 	}
 
 	/**
@@ -244,62 +258,86 @@ public class EXT003 extends ExtendM3Batch {
 	 */
 	private void fillEXTWR0(Integer cono, String faci) {
 		boolean noError = true;
-		ExpressionFactory MMOPLPExpressionFactory = database.getExpressionFactory("MMOPLP");
-		MMOPLPExpressionFactory =  MMOPLPExpressionFactory.ne("ROHDPR","");
+		String prno = "";
+		int read = 10000;
+		while(read == 10000) {
+			ExpressionFactory MMOPLPExpressionFactory = database.getExpressionFactory("MMOPLP");
+			MMOPLPExpressionFactory =  MMOPLPExpressionFactory.ne("ROHDPR","").and(MMOPLPExpressionFactory.ge("ROPRNO",prno));
 
-		DBAction MMOPLPRecord = database.table("MMOPLP").index("10").matching(MMOPLPExpressionFactory).selection("ROCONO","ROFACI","ROHDPR","ROPRNO","ROPLPN","ROPLDT").build();
-		DBContainer MMOPLPContainer = MMOPLPRecord.createContainer();
-		MMOPLPContainer.setInt("ROCONO", cono);
-		MMOPLPContainer.setString("ROFACI", faci);
+			DBAction MMOPLPRecord = database.table("MMOPLP").index("85").matching(MMOPLPExpressionFactory).selection("ROCONO","ROFACI","ROHDPR","ROPRNO","ROPLPN","ROPLDT").build();
+			DBContainer MMOPLPContainer = MMOPLPRecord.createContainer();
+			MMOPLPContainer.setInt("ROCONO", cono);
+			MMOPLPContainer.setString("ROFACI", faci);
 
-
-		Closure<Boolean> MMOPLPClosure = { DBContainer MMOPLPdata ->
-			int NPPN = 0;
-			int NSPN = 0;
-			DBAction ITMASRecord = database.table("MITMAS").index("00").selection("MMGRP1","MMGRP2","MMGRP3","MMTPLI","MMHDPR","MMGRTI").build();
-			DBContainer ITMASContainer = ITMASRecord.createContainer();
-			ITMASContainer.setInt("MMCONO", cono);
-			ITMASContainer.setString("MMITNO", MMOPLPdata.getString("ROPRNO"));
-			if(!ITMASRecord.read(ITMASContainer)) {
-				miCaller.call("EXT001MI","AddError", ["CONO":cono.toString(),"IFID":"BATCH","FILE":"EXT003", "ERRM":"Article "+MMOPLPdata.getString("ROPRNO")+" non trouvé"],{});
-				noError = false;
-				return;
-			}
-
-			DBAction ITMAHRecord = database.table("MITMAH").index("00").selection("HMTX15","HMTY15").build();
-			DBContainer ITMAHContainer = ITMAHRecord.createContainer();
-			ITMAHContainer.setInt("HMCONO", cono);
-			ITMAHContainer.setString("HMITNO", MMOPLPdata.getString("ROPRNO"));
-			if(ITMAHRecord.read(ITMAHContainer)) {
-
-				NPPN = getNPPN(cono, ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMGRP1"), ITMASContainer.getString("MMGRP2"), ITMASContainer.getString("MMGRP3"),
-						ITMASContainer.getString("MMGRTI"));
-				NSPN = getNSPN(cono, MMOPLPdata.getString("ROPRNO"), ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMHDPR"), ITMAHContainer.getString("HMTX15"),
-						ITMAHContainer.getString("HMTY15"), ITMASContainer.getString("MMGRTI"));
-
-				DBAction wr0Record = database.table("EXTWR0").index("00").build();
+			if(!prno.isEmpty()) {
+				DBAction wr0Record = database.table("EXTWR0").index("04").build();
 				DBContainer wr0Container = wr0Record.createContainer();
-				wr0Container.set("EXCONO", MMOPLPdata.get("ROCONO"));
-				wr0Container.set("EXFACI", MMOPLPdata.get("ROFACI"));
-				wr0Container.set("EXHDPR", MMOPLPdata.get("ROHDPR"));
-				wr0Container.set("EXPRNO", MMOPLPdata.get("ROPRNO"));
-				wr0Container.set("EXPLPN", MMOPLPdata.get("ROPLPN"));
-				wr0Container.set("EXSCHN", 0);
-				wr0Container.setInt("EXORIG", getOriginPOF(MMOPLPdata.getInt("ROCONO"), MMOPLPdata.getString("ROFACI"), MMOPLPdata.getString("ROPRNO")));
-				wr0Container.set("EXPLDT", MMOPLPdata.get("ROPLDT"));
-				wr0Container.set("EXNPPN", NPPN);
-				wr0Container.set("EXNSPN", NSPN);
-
-				insertTrackingField(wr0Container);
-
-				if(!wr0Record.insert(wr0Container)) {
-					miCaller.call("EXT001MI","AddError", ["CONO":cono.toString(),"IFID":"BATCH","FILE":"EXT003", "ERRM":"Record CONO:"+MMOPLPdata.get("ROCONO")+" FACI:"+MMOPLPdata.get("ROFACI")+" HDPR:"+MMOPLPdata.get("ROHDPR")+" PRNO:"+MMOPLPdata.get("ROPRNO")+" PLPN:"+MMOPLPdata.get("ROPLPN")+" already exist"],{});
-				}
+				wr0Container.setInt("EXCONO", cono);
+				wr0Container.setString("EXFACI", faci);
+				wr0Container.setString("EXPRNO", prno);
+				wr0Record.readAll(wr0Container,3,10000,{DBContainer wr0Data ->
+					DBAction wr0UpdateRecord = database.table("EXTWR0").index("00").build();
+					DBContainer wr0UpdateContainer = wr0UpdateRecord.createContainer();
+					wr0UpdateContainer.setInt("EXCONO", wr0Data.getInt("EXCONO"));
+					wr0UpdateContainer.setString("EXFACI", wr0Data.getString("EXFACI"));
+					wr0UpdateContainer.setString("EXHDPR", wr0Data.getString("EXHDPR"));
+					wr0UpdateContainer.setString("EXPRNO", wr0Data.getString("EXPRNO"));
+					wr0UpdateContainer.setInt("EXPLPN", wr0Data.getInt("EXPLPN"));
+					wr0UpdateContainer.setInt("EXPLDT", wr0Data.getInt("EXPLDT"));
+					wr0UpdateRecord.readLock(wr0UpdateContainer, {LockedResult entry ->
+						entry.delete();
+					});
+				});
 			}
 
-		}
+			Closure<String> MMOPLPClosure = { DBContainer MMOPLPdata ->
+				int NPPN = 0;
+				int NSPN = 0;
+				DBAction ITMASRecord = database.table("MITMAS").index("00").selection("MMGRP1","MMGRP2","MMGRP3","MMTPLI","MMHDPR","MMGRTI").build();
+				DBContainer ITMASContainer = ITMASRecord.createContainer();
+				ITMASContainer.setInt("MMCONO", cono);
+				ITMASContainer.setString("MMITNO", MMOPLPdata.getString("ROPRNO"));
+				if(!ITMASRecord.read(ITMASContainer)) {
+					miCaller.call("EXT001MI","AddError", ["CONO":cono.toString(),"IFID":"BATCH","FILE":"EXT003", "ERRM":"Article "+MMOPLPdata.getString("ROPRNO")+" non trouvé"],{});
+					noError = false;
+					return;
+				}
 
-		MMOPLPRecord.readAll(MMOPLPContainer, 2, 30000, MMOPLPClosure);
+				DBAction ITMAHRecord = database.table("MITMAH").index("00").selection("HMTX15","HMTY15").build();
+				DBContainer ITMAHContainer = ITMAHRecord.createContainer();
+				ITMAHContainer.setInt("HMCONO", cono);
+				ITMAHContainer.setString("HMITNO", MMOPLPdata.getString("ROPRNO"));
+				if(ITMAHRecord.read(ITMAHContainer)) {
+
+					NPPN = getNPPN(cono, ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMGRP1"), ITMASContainer.getString("MMGRP2"), ITMASContainer.getString("MMGRP3"),
+							ITMASContainer.getString("MMGRTI"));
+					NSPN = getNSPN(cono, MMOPLPdata.getString("ROPRNO"), ITMASContainer.getString("MMTPLI"), ITMASContainer.getString("MMHDPR"), ITMAHContainer.getString("HMTX15"),
+							ITMAHContainer.getString("HMTY15"), ITMASContainer.getString("MMGRTI"));
+
+					DBAction wr0Record = database.table("EXTWR0").index("00").build();
+					DBContainer wr0Container = wr0Record.createContainer();
+					wr0Container.set("EXCONO", MMOPLPdata.get("ROCONO"));
+					wr0Container.set("EXFACI", MMOPLPdata.get("ROFACI"));
+					wr0Container.set("EXHDPR", MMOPLPdata.get("ROHDPR"));
+					wr0Container.set("EXPRNO", MMOPLPdata.get("ROPRNO"));
+					wr0Container.set("EXPLPN", MMOPLPdata.get("ROPLPN"));
+					wr0Container.set("EXSCHN", 0);
+					wr0Container.setInt("EXORIG", getOriginPOF(MMOPLPdata.getInt("ROCONO"), MMOPLPdata.getString("ROFACI"), MMOPLPdata.getString("ROPRNO")));
+					wr0Container.set("EXPLDT", MMOPLPdata.get("ROPLDT"));
+					wr0Container.set("EXNPPN", NPPN);
+					wr0Container.set("EXNSPN", NSPN);
+
+					insertTrackingField(wr0Container);
+
+					if(!wr0Record.insert(wr0Container)) {
+						miCaller.call("EXT001MI","AddError", ["CONO":cono.toString(),"IFID":"BATCH","FILE":"EXT003", "ERRM":"Record CONO:"+MMOPLPdata.get("ROCONO")+" FACI:"+MMOPLPdata.get("ROFACI")+" HDPR:"+MMOPLPdata.get("ROHDPR")+" PRNO:"+MMOPLPdata.get("ROPRNO")+" PLPN:"+MMOPLPdata.get("ROPLPN")+" already exist"],{});
+					}
+				}
+				prno = MMOPLPdata.getString("ROPRNO");
+			}
+
+			read = MMOPLPRecord.readAll(MMOPLPContainer, 2, 10000, MMOPLPClosure);
+		}
 	}
 
 	/**
@@ -438,66 +476,109 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param faci
 	 */
 	private void fillWr3Wr2(Integer cono, String faci) {
-		DBAction wr0Record = database.table("EXTWR0").index("00").selection("EXORIG","EXNPPN","EXNSPN").build();
-		DBContainer wr0Container = wr0Record.createContainer();
-		wr0Container.set("EXCONO", cono);
-		wr0Container.set("EXFACI", faci);
+		String hdpr = "";
+		int read = 10000;
+		while(read == 10000) {
+			ExpressionFactory extwr0ExpressionFactory = database.getExpressionFactory("EXTWR0");
+			extwr0ExpressionFactory = extwr0ExpressionFactory.ge("EXHDPR",hdpr);
+			DBAction wr0Record = database.table("EXTWR0").index("00").matching(extwr0ExpressionFactory).selection("EXORIG","EXNPPN","EXNSPN","EXHDPR").build();
+			DBContainer wr0Container = wr0Record.createContainer();
+			wr0Container.set("EXCONO", cono);
+			wr0Container.set("EXFACI", faci);
 
-		Closure<Boolean> WR0Closure = { DBContainer WR0data ->
+			if(!hdpr.isEmpty()) {
+				DBAction wr3Record = database.table("EXTWR3").index("00").build();
+				DBContainer wr3Container = wr3Record.createContainer();
+				wr3Container.setInt("EXCONO", cono);
+				wr3Container.setString("EXFACI", faci);
+				wr3Container.setString("EXHDPR", hdpr);
+				wr3Record.readAll(wr3Container,3,1000,{DBContainer wr3Data ->
+					DBAction wr3UpdateRecord = database.table("EXTWR3").index("00").build();
+					DBContainer wr3UpdateContainer = wr3UpdateRecord.createContainer();
+					wr3UpdateContainer.setInt("EXCONO", wr3Data.getInt("EXCONO"));
+					wr3UpdateContainer.setString("EXFACI", wr3Data.getString("EXFACI"));
+					wr3UpdateContainer.setString("EXHDPR", wr3Data.getString("EXHDPR"));
+					wr3UpdateContainer.setString("EXPRNO", wr3Data.getString("EXPRNO"));
+					wr3UpdateRecord.readLock(wr3UpdateContainer, {LockedResult entry ->
+						entry.delete();
+					});
+				});
+				DBAction wr2Record = database.table("EXTWR2").index("00").build();
+				DBContainer wr2Container = wr2Record.createContainer();
+				wr2Container.setInt("EXCONO", cono);
+				wr2Container.setString("EXFACI", faci);
+				wr2Container.setString("EXHDPR", hdpr);
+				wr2Record.readAll(wr2Container,3,1000,{DBContainer wr2Data ->
+					DBAction wr2UpdateRecord = database.table("EXTWR2").index("00").build();
+					DBContainer wr2UpdateContainer = wr2UpdateRecord.createContainer();
+					wr2UpdateContainer.setInt("EXCONO", wr2Data.getInt("EXCONO"));
+					wr2UpdateContainer.setString("EXFACI", wr2Data.getString("EXFACI"));
+					wr2UpdateContainer.setString("EXHDPR", wr2Data.getString("EXHDPR"));
+					wr2UpdateRecord.readLock(wr2UpdateContainer, {LockedResult entry ->
+						entry.delete();
+					});
+				});
 
-			DBAction wr3Record = database.table("EXTWR3").index("00").build();
-			DBContainer wr3Container = wr3Record.createContainer();
-			wr3Container.set("EXCONO", WR0data.get("EXCONO"));
-			wr3Container.set("EXFACI", WR0data.get("EXFACI"));
-			wr3Container.set("EXHDPR", WR0data.get("EXHDPR"));
-			wr3Container.set("EXPRNO", WR0data.get("EXPRNO"));
-
-			if(!wr3Record.readLock(wr3Container){LockedResult updatedRecord ->
-						if(updatedRecord.getInt("EXORIG")==0) {
-							updatedRecord.setInt("EXORIG", WR0data.getInt("EXORIG"));
-						}
-						updatedRecord.setInt("EXTSKU", updatedRecord.getInt("EXTSKU") + 1);
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					}) {
-
-				wr3Container.set("EXORIG", WR0data.get("EXORIG"));
-				wr3Container.set("EXNPPN", WR0data.get("EXNPPN"));
-				wr3Container.set("EXNSPN", WR0data.get("EXNSPN"))
-				wr3Container.set("EXNNOT", 0);
-				wr3Container.set("EXTSKU", 1)
-				wr3Container.set("EXTECT", 0)
-				wr3Container.set("EXREST", 0)
-
-				insertTrackingField(wr3Container);
-
-				wr3Record.insert(wr3Container);
 			}
 
-			DBAction wr2Record = database.table("EXTWR2").index("00").build();
-			DBContainer wr2Container = wr2Record.createContainer();
-			wr2Container.set("EXCONO", WR0data.get("EXCONO"));
-			wr2Container.set("EXFACI", WR0data.get("EXFACI"));
-			wr2Container.set("EXHDPR", WR0data.get("EXHDPR"));
+			Closure<String> WR0Closure = { DBContainer WR0data ->
 
-			if(!wr2Record.readLock(wr2Container,{LockedResult updatedRecord ->
-						updatedRecord.set("EXTSTY", updatedRecord.getInt("EXTSTY") + 1);
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					})) {
+				DBAction wr3Record = database.table("EXTWR3").index("00").build();
+				DBContainer wr3Container = wr3Record.createContainer();
+				wr3Container.set("EXCONO", WR0data.get("EXCONO"));
+				wr3Container.set("EXFACI", WR0data.get("EXFACI"));
+				wr3Container.set("EXHDPR", WR0data.get("EXHDPR"));
+				wr3Container.set("EXPRNO", WR0data.get("EXPRNO"));
 
-				wr2Container.set("EXNPPN", WR0data.get("EXNPPN"));
-				wr2Container.set("EXNSPN", WR0data.get("EXNSPN"))
-				wr2Container.set("EXNNOT", 0);
-				wr2Container.set("EXTSTY", 1)
+				if(!wr3Record.readLock(wr3Container){LockedResult updatedRecord ->
+							if(updatedRecord.getInt("EXORIG")==0) {
+								updatedRecord.setInt("EXORIG", WR0data.getInt("EXORIG"));
+							}
+							updatedRecord.setInt("EXTSKU", updatedRecord.getInt("EXTSKU") + 1);
+							updateTrackingField(updatedRecord, "EX");
+							updatedRecord.update();
+						}) {
 
-				insertTrackingField(wr2Container);
+					wr3Container.set("EXORIG", WR0data.get("EXORIG"));
+					wr3Container.set("EXNPPN", WR0data.get("EXNPPN"));
+					wr3Container.set("EXNSPN", WR0data.get("EXNSPN"))
+					wr3Container.set("EXNNOT", 0);
+					wr3Container.set("EXTSKU", 1)
+					wr3Container.set("EXTECT", 0)
+					wr3Container.set("EXREST", 0)
 
-				wr2Record.insert(wr2Container);
+					insertTrackingField(wr3Container);
+
+					wr3Record.insert(wr3Container);
+				}
+
+				DBAction wr2Record = database.table("EXTWR2").index("00").build();
+				DBContainer wr2Container = wr2Record.createContainer();
+				wr2Container.set("EXCONO", WR0data.get("EXCONO"));
+				wr2Container.set("EXFACI", WR0data.get("EXFACI"));
+				wr2Container.set("EXHDPR", WR0data.get("EXHDPR"));
+
+				if(!wr2Record.readLock(wr2Container,{LockedResult updatedRecord ->
+							updatedRecord.set("EXTSTY", updatedRecord.getInt("EXTSTY") + 1);
+							updateTrackingField(updatedRecord, "EX");
+							updatedRecord.update();
+						})) {
+
+					wr2Container.set("EXNPPN", WR0data.get("EXNPPN"));
+					wr2Container.set("EXNSPN", WR0data.get("EXNSPN"))
+					wr2Container.set("EXNNOT", 0);
+					wr2Container.set("EXTSTY", 1)
+
+					insertTrackingField(wr2Container);
+
+					wr2Record.insert(wr2Container);
+				}
+				hdpr = WR0data.getString("EXHDPR");
 			}
+
+			read = wr0Record.readAll(wr0Container, 2, 10000, WR0Closure);
 		}
 
-		wr0Record.readAll(wr0Container, 2, 30000, WR0Closure);
 	}
 
 	/**
@@ -506,52 +587,77 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param faci
 	 */
 	private void calculTectRest(Integer cono, String faci) {
-		DBAction wr3Record = database.table("EXTWR3").index("01").selection("EXTSKU").build();
-		DBContainer wr3Container = wr3Record.createContainer();
-		wr3Container.set("EXCONO", cono);
-		wr3Container.set("EXFACI", faci);
+		String hdpr = "";
+		int read = 10000;
+		while(read == 10000) {
+			ExpressionFactory extwr3ExpressionFactory = database.getExpressionFactory("EXTWR3");
+			extwr3ExpressionFactory = extwr3ExpressionFactory.ge("EXHDPR",hdpr);
+			DBAction wr3Record = database.table("EXTWR3").index("01").matching(extwr3ExpressionFactory).selection("EXTSKU","EXHDPR").build();
+			DBContainer wr3Container = wr3Record.createContainer();
+			wr3Container.set("EXCONO", cono);
+			wr3Container.set("EXFACI", faci);
 
-		Closure<Boolean> WR3Closure = { DBContainer wr3data ->
-			DBAction wr2Record = database.table("EXTWR2").index("00").selection("EXTSTY", "EXNPPN", "EXNSPN","EXMNOT").build();
-			DBContainer wr2Container = wr2Record.createContainer();
-			wr2Container.set("EXCONO", wr3data.get("EXCONO"));
-			wr2Container.set("EXFACI", wr3data.get("EXFACI"));
-			wr2Container.set("EXHDPR", wr3data.get("EXHDPR"));
+			if(!hdpr.isEmpty()) {
+				DBAction wr2Record = database.table("EXTWR2").index("00").build();
+				DBContainer wr2Container = wr2Record.createContainer();
+				wr2Container.setInt("EXCONO", cono);
+				wr2Container.setString("EXFACI", faci);
+				wr2Container.setString("EXHDPR", hdpr);
+				wr2Record.readAll(wr2Container,3,1000,{DBContainer wr2Data ->
+					DBAction wr2UpdateRecord = database.table("EXTWR2").index("00").build();
+					DBContainer wr2UpdateContainer = wr2UpdateRecord.createContainer();
+					wr2UpdateContainer.setInt("EXCONO", wr2Data.getInt("EXCONO"));
+					wr2UpdateContainer.setString("EXFACI", wr2Data.getString("EXFACI"));
+					wr2UpdateContainer.setString("EXHDPR", wr2Data.getString("EXHDPR"));
+					wr2UpdateRecord.readLock(wr2UpdateContainer, {LockedResult entry ->
+						entry.delete();
+					});
+				});
+			}
 
-			Double NNOT = 0;
-			Double MNOT = 0;
-			wr2Record.readLock(wr2Container, {LockedResult updatedRecord ->
-				Integer TSKY = updatedRecord.get("EXTSTY");
-				Integer NPPN = updatedRecord.get("EXNPPN");
-				NNOT = Math.ceil((TSKY/NPPN).toDouble());
-				MNOT = Math.ceil((wr3data.getInt("EXTSKU")/updatedRecord.getInt("EXNSPN")).toDouble())
-				if(updatedRecord.getInt("EXMNOT")<MNOT) {
-					updatedRecord.set("EXMNOT", MNOT);
-				}
-				updatedRecord.set("EXNNOT", NNOT);
-				updateTrackingField(updatedRecord, "EX");
-				updatedRecord.update();
-			});
+			Closure<String> WR3Closure = { DBContainer wr3data ->
+				DBAction wr2Record = database.table("EXTWR2").index("00").selection("EXTSTY", "EXNPPN", "EXNSPN","EXMNOT").build();
+				DBContainer wr2Container = wr2Record.createContainer();
+				wr2Container.set("EXCONO", wr3data.get("EXCONO"));
+				wr2Container.set("EXFACI", wr3data.get("EXFACI"));
+				wr2Container.set("EXHDPR", wr3data.get("EXHDPR"));
 
-			DBAction wr3RecordUpdate =database.table("EXTWR3").index("00").selection("EXTSKU").build();
-			DBContainer wr3ContainerUpdate = wr3RecordUpdate.createContainer();
-			wr3ContainerUpdate.set("EXCONO", wr3data.get("EXCONO"));
-			wr3ContainerUpdate.set("EXFACI", wr3data.get("EXFACI"));
-			wr3ContainerUpdate.set("EXHDPR", wr3data.get("EXHDPR"));
-			wr3ContainerUpdate.set("EXPRNO", wr3data.get("EXPRNO"));
+				Double NNOT = 0;
+				Double MNOT = 0;
+				wr2Record.readLock(wr2Container, {LockedResult updatedRecord ->
+					Integer TSKY = updatedRecord.get("EXTSTY");
+					Integer NPPN = updatedRecord.get("EXNPPN");
+					NNOT = Math.ceil((TSKY/NPPN).toDouble());
+					MNOT = Math.ceil((wr3data.getInt("EXTSKU")/updatedRecord.getInt("EXNSPN")).toDouble())
+					if(updatedRecord.getInt("EXMNOT")<MNOT) {
+						updatedRecord.set("EXMNOT", MNOT);
+					}
+					updatedRecord.set("EXNNOT", NNOT);
+					updateTrackingField(updatedRecord, "EX");
+					updatedRecord.update();
+				});
 
-			wr3RecordUpdate.readLock(wr3ContainerUpdate,{LockedResult updatedRecord ->
-				Double TECT =  updatedRecord.getInt("EXTSKU");
-				if(capping)
-					TECT = Math.min(NNOT, updatedRecord.getInt("EXTSKU"));
-				updatedRecord.set("EXTECT", TECT);
-				updatedRecord.set("EXREST", TECT);
-				updateTrackingField(updatedRecord, "EX");
-				updatedRecord.update();
-			});
+				DBAction wr3RecordUpdate =database.table("EXTWR3").index("00").selection("EXTSKU").build();
+				DBContainer wr3ContainerUpdate = wr3RecordUpdate.createContainer();
+				wr3ContainerUpdate.set("EXCONO", wr3data.get("EXCONO"));
+				wr3ContainerUpdate.set("EXFACI", wr3data.get("EXFACI"));
+				wr3ContainerUpdate.set("EXHDPR", wr3data.get("EXHDPR"));
+				wr3ContainerUpdate.set("EXPRNO", wr3data.get("EXPRNO"));
+
+				wr3RecordUpdate.readLock(wr3ContainerUpdate,{LockedResult updatedRecord ->
+					Double TECT =  updatedRecord.getInt("EXTSKU");
+					if(capping)
+						TECT = Math.min(NNOT, updatedRecord.getInt("EXTSKU"));
+					updatedRecord.set("EXTECT", TECT);
+					updatedRecord.set("EXREST", TECT);
+					updateTrackingField(updatedRecord, "EX");
+					updatedRecord.update();
+				});
+				hdpr = wr3data.getString("EXHDPR");
+			}
+
+			read = wr3Record.readAll(wr3Container, 2, 10000, WR3Closure);
 		}
-
-		wr3Record.readAll(wr3Container, 2, 15000, WR3Closure);
 	}
 
 	/**
@@ -958,102 +1064,109 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param faci
 	 */
 	private void qualifOF(int cono, String faci) {
-		DBAction extbesRecord = database.table("EXTBES").index("00").selection("EXTRQ0","EXTRQ1","EXTRQ2","EXTRQ3","EXTRQ4","EXTRQ5","EXTRQ6","EXTRQ7","EXTRQ8","EXTRQ9").build();
-		DBContainer extbesContainer = extbesRecord.createContainer();
-		extbesContainer.setInt("EXCONO", cono);
-		extbesContainer.setString("EXFACI", faci);
+		String prno = "";
+		int read = 10000;
 
-		extbesRecord.readAll(extbesContainer, 2, 50000, { DBContainer extbesData ->
-			DBAction extbesUpdateRecord = database.table("EXTBES").index("00").selection("EXTRQ0","EXTRQ1","EXTRQ2","EXTRQ3","EXTRQ4","EXTRQ5","EXTRQ6","EXTRQ7","EXTRQ8","EXTRQ9").build();
-			DBContainer extbesUpdateContainer = extbesUpdateRecord.createContainer();
-			extbesUpdateContainer.setInt("EXCONO", extbesData.getInt("EXCONO"));
-			extbesUpdateContainer.setString("EXFACI", extbesData.getString("EXFACI"));
-			extbesUpdateContainer.setString("EXPRNO", extbesData.getString("EXPRNO"));
+		while(read == 10000) {
+			ExpressionFactory extbesExpressionFactory = database.getExpressionFactory("EXTBES");
+			extbesExpressionFactory = extbesExpressionFactory.gt("EXPRNO", prno);
+			DBAction extbesRecord = database.table("EXTBES").index("00").matching(extbesExpressionFactory).selection("EXPRNO","EXTRQ0","EXTRQ1","EXTRQ2","EXTRQ3","EXTRQ4","EXTRQ5","EXTRQ6","EXTRQ7","EXTRQ8","EXTRQ9").build();
+			DBContainer extbesContainer = extbesRecord.createContainer();
+			extbesContainer.setInt("EXCONO", cono);
+			extbesContainer.setString("EXFACI", faci);
 
-			extbesUpdateRecord.readLock(extbesContainer, { LockedResult extbesUpdate ->
+			read = extbesRecord.readAll(extbesContainer, 2, 10000, { DBContainer extbesData ->
+				DBAction extbesUpdateRecord = database.table("EXTBES").index("00").selection("EXTRQ0","EXTRQ1","EXTRQ2","EXTRQ3","EXTRQ4","EXTRQ5","EXTRQ6","EXTRQ7","EXTRQ8","EXTRQ9").build();
+				DBContainer extbesUpdateContainer = extbesUpdateRecord.createContainer();
+				extbesUpdateContainer.setInt("EXCONO", extbesData.getInt("EXCONO"));
+				extbesUpdateContainer.setString("EXFACI", extbesData.getString("EXFACI"));
+				extbesUpdateContainer.setString("EXPRNO", extbesData.getString("EXPRNO"));
 
-				ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MWOHED");
-				mwohedExpressionFactory = mwohedExpressionFactory.lt("VHWHST", "90");
+				extbesUpdateRecord.readLock(extbesContainer, { LockedResult extbesUpdate ->
 
-				DBAction mwohedRecord = database.table("MWOHED").index("00").matching(mwohedExpressionFactory).selection("VHSCHN", "VHMAQT", "VHORQT", "VHPRNO").build();
-				DBContainer mwohedContainer = mwohedRecord.createContainer();
-				mwohedContainer.setInt("VHCONO", cono);
-				mwohedContainer.setString("VHFACI", faci);
-				mwohedContainer.setString("VHPRNO", extbesUpdate.getString("EXPRNO"));
-				boolean besUpdated = false;
+					ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MWOHED");
+					mwohedExpressionFactory = mwohedExpressionFactory.lt("VHWHST", "90");
 
-				mwohedRecord.readAll(mwohedContainer, 3, 100, {  DBContainer mwohedData ->
-					if(mwohedData.getDouble("VHMAQT") >= mwohedData.getDouble("VHORQT"))
-						return;
-					String schn = ""+mwohedData.getLong("VHSCHN");
-					if(schn != mwohedData.getString("VHMFNO")) {
-						int prio = -1;
-						if(extbesUpdate.getDouble("EXTRQ0")> 0) {
-							extbesUpdate.setDouble("EXTRQ0", extbesUpdate.getDouble("EXTRQ0") - mwohedData.getDouble("VHORQT"));
-							prio = 0;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ1")> 0) {
-							extbesUpdate.setDouble("EXTRQ1", extbesUpdate.getDouble("EXTRQ1") - mwohedData.getDouble("VHORQT"));
-							prio = 1;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ2")> 0) {
-							extbesUpdate.setDouble("EXTRQ2", extbesUpdate.getDouble("EXTRQ2") - mwohedData.getDouble("VHORQT"));
-							prio = 2;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ3")> 0) {
-							extbesUpdate.setDouble("EXTRQ3", extbesUpdate.getDouble("EXTRQ3") - mwohedData.getDouble("VHORQT"));
-							prio = 3;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ4")> 0) {
-							extbesUpdate.setDouble("EXTRQ4", extbesUpdate.getDouble("EXTRQ4") - mwohedData.getDouble("VHORQT"));
-							prio = 4;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ5")> 0) {
-							extbesUpdate.setDouble("EXTRQ5", extbesUpdate.getDouble("EXTRQ5") - mwohedData.getDouble("VHORQT"));
-							prio = 5;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ6")> 0) {
-							extbesUpdate.setDouble("EXTRQ6", extbesUpdate.getDouble("EXTRQ6") - mwohedData.getDouble("VHORQT"));
-							prio = 6;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ7")> 0) {
-							extbesUpdate.setDouble("EXTRQ7", extbesUpdate.getDouble("EXTRQ7") - mwohedData.getDouble("VHORQT"));
-							prio = 7;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ8")> 0) {
-							extbesUpdate.setDouble("EXTRQ8", extbesUpdate.getDouble("EXTRQ8") - mwohedData.getDouble("VHORQT"));
-							prio = 8;
-							besUpdated = true;
-						}else if(extbesUpdate.getDouble("EXTRQ9")> 0) {
-							extbesUpdate.setDouble("EXTRQ9", extbesUpdate.getDouble("EXTRQ9") - mwohedData.getDouble("VHORQT"));
-							prio = 9;
-							besUpdated = true;
+					DBAction mwohedRecord = database.table("MWOHED").index("00").matching(mwohedExpressionFactory).selection("VHSCHN", "VHMAQT", "VHORQT", "VHPRNO").build();
+					DBContainer mwohedContainer = mwohedRecord.createContainer();
+					mwohedContainer.setInt("VHCONO", cono);
+					mwohedContainer.setString("VHFACI", faci);
+					mwohedContainer.setString("VHPRNO", extbesUpdate.getString("EXPRNO"));
+					boolean besUpdated = false;
+
+					mwohedRecord.readAll(mwohedContainer, 3, 100, {  DBContainer mwohedData ->
+						if(mwohedData.getDouble("VHMAQT") >= mwohedData.getDouble("VHORQT"))
+							return;
+						String schn = ""+mwohedData.getLong("VHSCHN");
+						if(schn != mwohedData.getString("VHMFNO")) {
+							int prio = -1;
+							if(extbesUpdate.getDouble("EXTRQ0")> 0) {
+								extbesUpdate.setDouble("EXTRQ0", extbesUpdate.getDouble("EXTRQ0") - mwohedData.getDouble("VHORQT"));
+								prio = 0;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ1")> 0) {
+								extbesUpdate.setDouble("EXTRQ1", extbesUpdate.getDouble("EXTRQ1") - mwohedData.getDouble("VHORQT"));
+								prio = 1;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ2")> 0) {
+								extbesUpdate.setDouble("EXTRQ2", extbesUpdate.getDouble("EXTRQ2") - mwohedData.getDouble("VHORQT"));
+								prio = 2;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ3")> 0) {
+								extbesUpdate.setDouble("EXTRQ3", extbesUpdate.getDouble("EXTRQ3") - mwohedData.getDouble("VHORQT"));
+								prio = 3;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ4")> 0) {
+								extbesUpdate.setDouble("EXTRQ4", extbesUpdate.getDouble("EXTRQ4") - mwohedData.getDouble("VHORQT"));
+								prio = 4;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ5")> 0) {
+								extbesUpdate.setDouble("EXTRQ5", extbesUpdate.getDouble("EXTRQ5") - mwohedData.getDouble("VHORQT"));
+								prio = 5;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ6")> 0) {
+								extbesUpdate.setDouble("EXTRQ6", extbesUpdate.getDouble("EXTRQ6") - mwohedData.getDouble("VHORQT"));
+								prio = 6;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ7")> 0) {
+								extbesUpdate.setDouble("EXTRQ7", extbesUpdate.getDouble("EXTRQ7") - mwohedData.getDouble("VHORQT"));
+								prio = 7;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ8")> 0) {
+								extbesUpdate.setDouble("EXTRQ8", extbesUpdate.getDouble("EXTRQ8") - mwohedData.getDouble("VHORQT"));
+								prio = 8;
+								besUpdated = true;
+							}else if(extbesUpdate.getDouble("EXTRQ9")> 0) {
+								extbesUpdate.setDouble("EXTRQ9", extbesUpdate.getDouble("EXTRQ9") - mwohedData.getDouble("VHORQT"));
+								prio = 9;
+								besUpdated = true;
+							}
+
+							if(prio > -1) {
+								DBAction mwohedUpdateRecord = database.table("MWOHED").index("00").selection("VHPRIO").build();
+								DBContainer mwohedUpdateContainer = mwohedUpdateRecord.createContainer();
+								mwohedUpdateContainer.setInt("VHCONO", mwohedData.getInt("VHCONO"));
+								mwohedUpdateContainer.setString("VHFACI",mwohedData.getString("VHFACI"));
+								mwohedUpdateContainer.setString("VHPRNO",mwohedData.getString("VHPRNO"));
+								mwohedUpdateContainer.setString("VHMFNO",mwohedData.getString("VHMFNO"));
+								mwohedUpdateRecord.readLock(mwohedUpdateContainer, {  LockedResult mwohedUpdate ->
+									mwohedUpdate.setInt("VHPRIO", prio);
+									updateTrackingField(mwohedUpdate, "VH");
+									mwohedUpdate.update();
+								});
+							}
 						}
 
-						if(prio > -1) {
-							DBAction mwohedUpdateRecord = database.table("MWOHED").index("00").selection("VHPRIO").build();
-							DBContainer mwohedUpdateContainer = mwohedUpdateRecord.createContainer();
-							mwohedUpdateContainer.setInt("VHCONO", mwohedData.getInt("VHCONO"));
-							mwohedUpdateContainer.setString("VHFACI",mwohedData.getString("VHFACI"));
-							mwohedUpdateContainer.setString("VHPRNO",mwohedData.getString("VHPRNO"));
-							mwohedUpdateContainer.setString("VHMFNO",mwohedData.getString("VHMFNO"));
-							mwohedUpdateRecord.readLock(mwohedUpdateContainer, {  LockedResult mwohedUpdate ->
-								mwohedUpdate.setInt("VHPRIO", prio);
-								updateTrackingField(mwohedUpdate, "VH");
-								mwohedUpdate.update();
-							});
-						}
+					});
+
+					if(besUpdated) {
+						updateTrackingField(extbesUpdate, "EX");
+						extbesUpdate.update();
 					}
-
 				});
-
-				if(besUpdated) {
-					updateTrackingField(extbesUpdate, "EX");
-					extbesUpdate.update();
-				}
+				prno = extbesData.getString("EXPRNO");
 			});
-
-		});
+		}
 	}
 
 	/**
