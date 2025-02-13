@@ -220,8 +220,8 @@ public class EXT003 extends ExtendM3Batch {
 		CUGEX1Record = database.table("CUGEX1").index("00").matching(CUGEXExpressionFactory).selection("F1N096","F1N196").build();
 		CUGEX1Container = CUGEX1Record.createContainer();
 		CUGEX1Container.setString("F1FILE", "EXT003");
-		CUGEX1Container.setString("F1PK01", "NSPN");
-		CUGEX1Record.readAll(CUGEX1Container, 2, {
+		CUGEX1Container.setString("F1PK01", "FORMESTOCK");
+		CUGEX1Record.readAll(CUGEX1Container, 2, 30, {
 			corresFomrStock.push([CUGEX1Container.getDouble("F1N096"),CUGEX1Container.getDouble("F1N196")] as double[]);
 		});
 	}
@@ -1066,7 +1066,6 @@ public class EXT003 extends ExtendM3Batch {
 	private void qualifOF(int cono, String faci) {
 		String prno = "";
 		int read = 10000;
-
 		while(read == 10000) {
 			ExpressionFactory extbesExpressionFactory = database.getExpressionFactory("EXTBES");
 			extbesExpressionFactory = extbesExpressionFactory.gt("EXPRNO", prno);
