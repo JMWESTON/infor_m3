@@ -12,7 +12,7 @@ public class EXT003 extends ExtendM3Batch {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 	private final MICallerAPI miCaller;
-	
+
 	private String errorMessage = "";
 
 	private boolean capping = false;
@@ -49,20 +49,20 @@ public class EXT003 extends ExtendM3Batch {
 		resetTables(CONO);
 
 		qualifOF(CONO, FACI);
-		
+
 		fillEXTWR0(CONO, FACI);
-		
+
 		fillWr3Wr2(CONO, FACI);
-		
+
 		calculTectRest(CONO, FACI);
-		
+
 		if(!fillEXNOT(CONO, FACI)) {
 			clearTableNeed(CONO);
 			return;
 		}
-		
+
 		creationNoteMerePrioritaire(CONO);
-		
+
 		if(!creationNoteMere(CONO)) {
 			clearTableNeed(CONO);
 			return;
@@ -508,15 +508,8 @@ public class EXT003 extends ExtendM3Batch {
 				wr2Container.setInt("EXCONO", cono);
 				wr2Container.setString("EXFACI", faci);
 				wr2Container.setString("EXHDPR", hdpr);
-				wr2Record.readAll(wr2Container,3,1000,{DBContainer wr2Data ->
-					DBAction wr2UpdateRecord = database.table("EXTWR2").index("00").build();
-					DBContainer wr2UpdateContainer = wr2UpdateRecord.createContainer();
-					wr2UpdateContainer.setInt("EXCONO", wr2Data.getInt("EXCONO"));
-					wr2UpdateContainer.setString("EXFACI", wr2Data.getString("EXFACI"));
-					wr2UpdateContainer.setString("EXHDPR", wr2Data.getString("EXHDPR"));
-					wr2UpdateRecord.readLock(wr2UpdateContainer, {LockedResult entry ->
-						entry.delete();
-					});
+				wr2Record.readLock(wr2Container, {LockedResult entry ->
+					entry.delete();
 				});
 
 			}
@@ -596,22 +589,14 @@ public class EXT003 extends ExtendM3Batch {
 			DBContainer wr3Container = wr3Record.createContainer();
 			wr3Container.set("EXCONO", cono);
 			wr3Container.set("EXFACI", faci);
-
 			if(!hdpr.isEmpty()) {
 				DBAction wr2Record = database.table("EXTWR2").index("00").build();
 				DBContainer wr2Container = wr2Record.createContainer();
 				wr2Container.setInt("EXCONO", cono);
 				wr2Container.setString("EXFACI", faci);
 				wr2Container.setString("EXHDPR", hdpr);
-				wr2Record.readAll(wr2Container,3,1000,{DBContainer wr2Data ->
-					DBAction wr2UpdateRecord = database.table("EXTWR2").index("00").build();
-					DBContainer wr2UpdateContainer = wr2UpdateRecord.createContainer();
-					wr2UpdateContainer.setInt("EXCONO", wr2Data.getInt("EXCONO"));
-					wr2UpdateContainer.setString("EXFACI", wr2Data.getString("EXFACI"));
-					wr2UpdateContainer.setString("EXHDPR", wr2Data.getString("EXHDPR"));
-					wr2UpdateRecord.readLock(wr2UpdateContainer, {LockedResult entry ->
-						entry.delete();
-					});
+				wr2Record.readLock(wr2Container, {LockedResult entry ->
+					entry.delete();
 				});
 			}
 
@@ -1080,8 +1065,7 @@ public class EXT003 extends ExtendM3Batch {
 				extbesUpdateContainer.setInt("EXCONO", extbesData.getInt("EXCONO"));
 				extbesUpdateContainer.setString("EXFACI", extbesData.getString("EXFACI"));
 				extbesUpdateContainer.setString("EXPRNO", extbesData.getString("EXPRNO"));
-
-				extbesUpdateRecord.readLock(extbesContainer, { LockedResult extbesUpdate ->
+				extbesUpdateRecord.readLock(extbesUpdateContainer, { LockedResult extbesUpdate ->
 
 					ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MWOHED");
 					mwohedExpressionFactory = mwohedExpressionFactory.lt("VHWHST", "90");
