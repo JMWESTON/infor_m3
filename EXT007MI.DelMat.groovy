@@ -35,7 +35,7 @@ public class DelMat extends ExtendM3Transaction {
 			return;
 		}
 
-		DBAction exmat2Record = database.table("EXTMA2").index("00").selection("EXREQT").build();
+		DBAction exmat2Record = database.table("EXTMA2").index("00").selection("EXREQT","EXCHNO").build();
 		DBContainer exmat2Container = exmat2Record.createContainer();
 		exmat2Container.setInt("EXCONO", CONO);
 		exmat2Container.setString("EXFACI", FACI);

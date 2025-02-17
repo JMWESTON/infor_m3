@@ -38,10 +38,10 @@ public class DelMatFromOF extends ExtendM3Transaction {
 
 		DBAction mwomatRecord = database.table("MWOMAT").index("00").selection("VMPLGR","VMOPNO","VMMTNO","VMREQT").build();
 		DBContainer mwomatContainer = mwomatRecord.createContainer();
-		mwomatContainer.setInt("VHCONO", CONO);
-		mwomatContainer.setString("VHFACI", FACI);
-		mwomatContainer.setString("VHPRNO", PRNO);
-		mwomatContainer.setString("VHMFNO", MFNO);
+		mwomatContainer.setInt("VMCONO", CONO);
+		mwomatContainer.setString("VMFACI", FACI);
+		mwomatContainer.setString("VMPRNO", PRNO);
+		mwomatContainer.setString("VMMFNO", MFNO);
 		mwomatRecord.readAll(mwomatContainer, 4, 1000, { DBContainer mwomatData ->
 			DBAction extma2Record = database.table("EXTMA2").index("00").selection("EXREQT","EXCHNO").build();
 			DBContainer extma2Container = extma2Record.createContainer();
@@ -51,7 +51,7 @@ public class DelMatFromOF extends ExtendM3Transaction {
 			extma2Container.setLong("EXMERE", SCHN);
 			extma2Container.setInt("EXOPNO", mwomatData.getInt("VMOPNO"));
 			extma2Container.setString("EXMTNO", mwomatData.getString("VMMTNO"));
-			extma2Record.readLock(mwomatContainer, { LockedResult updatedRecord ->
+			extma2Record.readLock(extma2Container, { LockedResult updatedRecord ->
 				double newQty = updatedRecord.getDouble("EXREQT") - mwomatData.getDouble("VMREQT");
 				if(newQty <= 0 ) {
 					updatedRecord.delete();
