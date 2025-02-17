@@ -36,7 +36,7 @@ public class AgregMat extends ExtendM3Transaction {
 		int nbKeys;
 
 		if(INDX == "10") {
-			exmat2Record = database.table("EXTMA2").index("10").selection("EXMTNO","EXREQT").build();
+			exmat2Record = database.table("EXTMA2").index("10").selection("EXMTNO","EXREQT","EXCHNO").build();
 			exmat2Container = exmat2Record.createContainer();
 			exmat2Container.setInt("EXCONO", CONO);
 			exmat2Container.setString("EXFACI", FACI);
@@ -45,7 +45,7 @@ public class AgregMat extends ExtendM3Transaction {
 			exmat2Container.setInt("EXOPNO", OPNO);
 			nbKeys = 5;
 		}else {
-			exmat2Record = database.table("EXTMA2").index("20").selection("EXPLGR","EXOPNO","EXMTNO","EXREQT").build();
+			exmat2Record = database.table("EXTMA2").index("20").selection("EXPLGR","EXOPNO","EXMTNO","EXREQT","EXCHNO").build();
 			exmat2Container = exmat2Record.createContainer();
 			exmat2Container.setInt("EXCONO", CONO);
 			exmat2Container.setString("EXFACI", FACI);
@@ -54,7 +54,7 @@ public class AgregMat extends ExtendM3Transaction {
 		}
 
 		if(NDEL == 1) {
-			DBAction extma1Record = database.table("EXTMA1").index("00").selection("EXPLGR","EXOPNO").build();
+			DBAction extma1Record = database.table("EXTMA1").index("00").selection("EXPLGR","EXOPNO","EXCHNO").build();
 			DBContainer extma1Container = extma1Record.createContainer();
 			extma1Container.setInt("EXCONO", CONO);
 			extma1Container.setString("EXFACI", FACI);
@@ -104,6 +104,7 @@ public class AgregMat extends ExtendM3Transaction {
 					extma1Container.setString("EXMTN1", extma2Data.getString("EXMTNO"));
 					extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
 					extma1Container.setString("EXPLG2", "S_"+PLGR.substring(2));
+					extma1Container.setInt("EXNBMA", nbMat)
 					insertTrackingField(extma1Container, "EX");
 					extma1Record.insert(extma1Container);
 				}
@@ -189,7 +190,7 @@ public class AgregMat extends ExtendM3Transaction {
 				return false;
 			}
 		}
-		
+
 		if(ndel != null && (ndel <0 || ndel > 1)) {
 			mi.error("Need deletion doit être compris entre 0 et 1.");
 			return false;
