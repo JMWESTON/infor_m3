@@ -31,12 +31,15 @@ public class UpdMat extends ExtendM3Transaction {
 		Double OLQT = mi.in.get("OLQT");
 		Double NEQT = mi.in.get("NEQT");
 		String WHST = (mi.inData.get("WHST") == null) ? "" : mi.inData.get("WHST").trim();
-
+		Integer SPMT = mi.in.get("SPMT");
+		
 		if(!checkInputs(CONO, FACI, PLGR, MERE, OPNO, MTNO, OLQT, NEQT)) {
 			return;
 		}
 
+			
 		double reqt = NEQT - OLQT;
+			
 		DBAction extma2Record = database.table("EXTMA2").index("00").selection("EXREQT","EXCHNO").build();
 		DBContainer extma2Container = extma2Record.createContainer();
 		extma2Container.setInt("EXCONO", CONO);
@@ -55,6 +58,7 @@ public class UpdMat extends ExtendM3Transaction {
 					updatedRecord.update();
 				})){
 			extma2Container.setDouble("EXREQT", NEQT);
+			extma2Container.setInt("EXSPMT", SPMT);
 			insertTrackingField(extma2Container, "EX");
 			extma2Record.insert(extma2Container);
 		}
@@ -113,7 +117,7 @@ public class UpdMat extends ExtendM3Transaction {
 			return false;
 		}
 		if(!utility.call("CheckUtil", "checkSCHNExist", database, cono, mere)){
-			mi.error("La note mère n'existe pas.");
+			mi.error("La note mère "+mere+" n'existe pas.");
 			return false;
 		}
 

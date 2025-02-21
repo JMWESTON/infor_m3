@@ -36,7 +36,7 @@ public class AgregMat extends ExtendM3Transaction {
 		int nbKeys;
 
 		if(INDX == "10") {
-			exmat2Record = database.table("EXTMA2").index("10").selection("EXMTNO","EXREQT","EXCHNO").build();
+			exmat2Record = database.table("EXTMA2").index("10").selection("EXMTNO","EXREQT","EXCHNO","EXSPMT").build();
 			exmat2Container = exmat2Record.createContainer();
 			exmat2Container.setInt("EXCONO", CONO);
 			exmat2Container.setString("EXFACI", FACI);
@@ -45,7 +45,7 @@ public class AgregMat extends ExtendM3Transaction {
 			exmat2Container.setInt("EXOPNO", OPNO);
 			nbKeys = 5;
 		}else {
-			exmat2Record = database.table("EXTMA2").index("20").selection("EXPLGR","EXOPNO","EXMTNO","EXREQT","EXCHNO").build();
+			exmat2Record = database.table("EXTMA2").index("20").selection("EXPLGR","EXOPNO","EXMTNO","EXREQT","EXCHNO","EXSPMT").build();
 			exmat2Container = exmat2Record.createContainer();
 			exmat2Container.setInt("EXCONO", CONO);
 			exmat2Container.setString("EXFACI", FACI);
@@ -93,39 +93,51 @@ public class AgregMat extends ExtendM3Transaction {
 			extma1Container.setString("EXPLGR", extma2Data.getString("EXPLGR"));
 			extma1Container.setLong("EXMERE", extma2Data.getLong("EXMERE"));
 			extma1Container.setInt("EXOPNO",extma2Data.getInt("EXOPNO"));
-			if(nbMat == 1) {
-				if(!extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-							updatedRecord.setString("EXMTN1", extma2Data.getString("EXMTNO"));
-							updatedRecord.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"))
-							updatedRecord.setInt("EXNBMA", nbMat)
+
+			if(extma2Data.getInt("EXSPMT") == 2) {
+				if(nbMat == 1) {
+					if(!extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
+								updatedRecord.setString("EXMTN1", extma2Data.getString("EXMTNO"));
+								updatedRecord.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
+								updatedRecord.setInt("EXNBMA", nbMat);
+								updateTrackingField(updatedRecord, "EX");
+								updatedRecord.update();
+							})){
+						extma1Container.setString("EXMTN1", extma2Data.getString("EXMTNO"));
+						extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
+						extma1Container.setString("EXPLG2", "S_"+PLGR.substring(2));
+						extma1Container.setInt("EXNBMA", nbMat);
+						insertTrackingField(extma1Container, "EX");
+						extma1Record.insert(extma1Container);
+					}
+				}else
+					if(nbMat == 2) {
+						extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
+							updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
+							updatedRecord.setDouble("EXRQT2", extma2Data.getDouble("EXREQT"));
+							updatedRecord.setInt("EXNBMA", nbMat);
 							updateTrackingField(updatedRecord, "EX");
 							updatedRecord.update();
-						})){
+						});
+					}else {
+						extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
+							updatedRecord.setInt("EXNBMA", nbMat);
+							updateTrackingField(updatedRecord, "EX");
+							updatedRecord.update();
+						});
+					}
+				nbMat++;
+			}else {
+				if(!extma1Record.read(extma1Container)){
 					extma1Container.setString("EXMTN1", extma2Data.getString("EXMTNO"));
 					extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
 					extma1Container.setString("EXPLG2", "S_"+PLGR.substring(2));
-					extma1Container.setInt("EXNBMA", nbMat)
+					extma1Container.setInt("EXNBMA", 0);
 					insertTrackingField(extma1Container, "EX");
 					extma1Record.insert(extma1Container);
 				}
-			}else
-				if(nbMat == 2) {
-					extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-						updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
-						updatedRecord.setDouble("EXRQT2", extma2Data.getDouble("EXREQT"))
-						updatedRecord.setInt("EXNBMA", nbMat)
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					});
-				}else {
-					extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
-						updatedRecord.setInt("EXNBMA", nbMat)
-						updateTrackingField(updatedRecord, "EX");
-						updatedRecord.update();
-					});
-				}
 
-			nbMat++;
+			}
 		});
 	}
 	/**
