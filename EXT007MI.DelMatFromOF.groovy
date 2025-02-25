@@ -5,6 +5,7 @@
  * Description: Enlève quantité matière de l'OF dans la table extma2
  * Date                         Changed By                    Description
  * 20250131                     ddecosterd@hetic3.fr     		création
+ * 20250221						ddecosterd@hetic3.fr			fix CHNO not updated. fix field prefix
  */
 public class DelMatFromOF extends ExtendM3Transaction {
 	private final MIAPI mi;

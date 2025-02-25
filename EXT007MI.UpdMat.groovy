@@ -5,6 +5,7 @@
  * Description: Met à jour la quantité du matériau dans la table extma2
  * Date                         Changed By                    Description
  * 20250130                     ddecosterd@hetic3.fr     		création
+ * 20250221						ddecosterd@hetic3.fr			Add filter on SPMT
  */
 public class UpdMat extends ExtendM3Transaction {
 	private final MIAPI mi;

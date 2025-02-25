@@ -5,6 +5,7 @@
  * Description: Met à jour les matériaux et leur quantités dans la table extma1
  * Date                         Changed By                    Description
  * 20250203                     ddecosterd@hetic3.fr     		création
+ * 20250221						ddecosterd@hetic3.fr		fix CHNO not updated, EXNBMA value when the record is created. Add filter on SPMT.
  */
 public class AgregMat extends ExtendM3Transaction {
 	private final MIAPI mi;
