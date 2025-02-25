@@ -5,6 +5,7 @@
  * Description: Supprime le matériau dans la table exmat2
  * Date                         Changed By                    Description
  * 20250130                     ddecosterd@hetic3.fr     		création
+ * 20250221						ddecosterd@hetic3.fr			fix CHNO not updated. Search MERE in MWOHED instead of getting the call to remove error in CMS041. Delete material only when there is'nt one in mwomat for the given OPNO
  */
 public class DelMat extends ExtendM3Transaction {
 	private final MIAPI mi;
