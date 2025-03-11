@@ -6,6 +6,7 @@
  * Date                         Changed By                    Description
  * 20250203                     ddecosterd@hetic3.fr     		création
  * 20250221						ddecosterd@hetic3.fr		fix CHNO not updated, EXNBMA value when the record is created. Add filter on SPMT.
+ * 20250306						ddecosterd@hetic3.fr		Add number of manufacture order for a SCHN. Reset nbMat on change of PLGR. Remove the insert of material with SPMT != 2.
  */
 public class AgregMat extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -84,8 +85,18 @@ public class AgregMat extends ExtendM3Transaction {
 			}
 		}
 
+		
+			ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MMOPLP");
+			mwohedExpressionFactory =  mwohedExpressionFactory.eq("VHSCHN",MERE.toString());
+		DBAction mwohedRecord = database.table("MWOHED").index("00").matching(mwohedExpressionFactory).build();
+		DBContainer mwohedContainer = mwohedRecord.createContainer();
+		mwohedContainer.setInt("VHCONO", CONO);
+		mwohedContainer.setString("VHFACI", FACI);
+		int nbOf = mwohedRecord.readAll(mwohedContainer,2, 1000,{});
+
 
 		int nbMat = 1;
+		String plgr ="";
 		exmat2Record.readAll(exmat2Container, nbKeys, 100, {  DBContainer extma2Data ->
 			DBAction extma1Record = database.table("EXTMA1").index("00").build();
 			DBContainer extma1Container = extma1Record.createContainer();
@@ -94,6 +105,10 @@ public class AgregMat extends ExtendM3Transaction {
 			extma1Container.setString("EXPLGR", extma2Data.getString("EXPLGR"));
 			extma1Container.setLong("EXMERE", extma2Data.getLong("EXMERE"));
 			extma1Container.setInt("EXOPNO",extma2Data.getInt("EXOPNO"));
+			if(!plgr.equals(extma2Data.getString("EXPLGR"))) {
+				nbMat = 1;
+				plgr = extma2Data.getString("EXPLGR");
+			}
 
 			if(extma2Data.getInt("EXSPMT") == 2) {
 				if(nbMat == 1) {
@@ -101,13 +116,15 @@ public class AgregMat extends ExtendM3Transaction {
 								updatedRecord.setString("EXMTN1", extma2Data.getString("EXMTNO"));
 								updatedRecord.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
 								updatedRecord.setInt("EXNBMA", nbMat);
+								updatedRecord.setInt("EXNBOF", nbOf);
 								updateTrackingField(updatedRecord, "EX");
 								updatedRecord.update();
 							})){
 						extma1Container.setString("EXMTN1", extma2Data.getString("EXMTNO"));
 						extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
-						extma1Container.setString("EXPLG2", "S_"+PLGR.substring(2));
+						extma1Container.setString("EXPLG2", "S_"+extma2Data.getString("EXPLGR").substring(2));
 						extma1Container.setInt("EXNBMA", nbMat);
+						extma1Container.setInt("EXNBOF", nbOf);
 						insertTrackingField(extma1Container, "EX");
 						extma1Record.insert(extma1Container);
 					}
@@ -117,12 +134,14 @@ public class AgregMat extends ExtendM3Transaction {
 							updatedRecord.setString("EXMTN2", extma2Data.getString("EXMTNO"));
 							updatedRecord.setDouble("EXRQT2", extma2Data.getDouble("EXREQT"));
 							updatedRecord.setInt("EXNBMA", nbMat);
+							updatedRecord.setInt("EXNBOF", nbOf);
 							updateTrackingField(updatedRecord, "EX");
 							updatedRecord.update();
 						});
 					}else {
 						extma1Record.readLock(extma1Container, { LockedResult updatedRecord ->
 							updatedRecord.setInt("EXNBMA", nbMat);
+							updatedRecord.setInt("EXNBOF", nbOf);
 							updateTrackingField(updatedRecord, "EX");
 							updatedRecord.update();
 						});
@@ -130,10 +149,9 @@ public class AgregMat extends ExtendM3Transaction {
 				nbMat++;
 			}else {
 				if(!extma1Record.read(extma1Container)){
-					extma1Container.setString("EXMTN1", extma2Data.getString("EXMTNO"));
-					extma1Container.setDouble("EXRQT1", extma2Data.getDouble("EXREQT"));
-					extma1Container.setString("EXPLG2", "S_"+PLGR.substring(2));
+					extma1Container.setString("EXPLG2", "S_"+extma2Data.getString("EXPLGR").substring(2));
 					extma1Container.setInt("EXNBMA", 0);
+					extma1Container.setInt("EXNBOF", nbOf);
 					insertTrackingField(extma1Container, "EX");
 					extma1Record.insert(extma1Container);
 				}

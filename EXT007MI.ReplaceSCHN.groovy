@@ -5,6 +5,7 @@
  * Description: Met à jour la quantité du matériau dans la table extma2 suite à un changement de schn sur l'OF
  * Date                         Changed By                    Description
  * 20250217                     ddecosterd@hetic3.fr     		création
+ * 20250305						ddecosterd@hetic3.fr			Remove filter on SPMT. Fix EXMERE on line 62
  */
 public class ReplaceSCHN extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -36,9 +37,7 @@ public class ReplaceSCHN extends ExtendM3Transaction {
 			return;
 		}
 
-		ExpressionFactory mwomatExpressionFactory = database.getExpressionFactory("MWOMAT");
-		mwomatExpressionFactory = mwomatExpressionFactory.eq("VMSPMT", "2");
-		DBAction mwomatRecord = database.table("MWOMAT").index("10").matching(mwomatExpressionFactory).selection("VMPLGR","VMOPNO","VMMTNO","VMREQT","VMSPMT").build();
+		DBAction mwomatRecord = database.table("MWOMAT").index("10").selection("VMPLGR","VMOPNO","VMMTNO","VMREQT","VMSPMT").build();
 		DBContainer mwomatContainer = mwomatRecord.createContainer();
 		mwomatContainer.setInt("VMCONO", CONO);
 		mwomatContainer.setString("VMFACI",FACI);
@@ -60,7 +59,7 @@ public class ReplaceSCHN extends ExtendM3Transaction {
 				updatedRecord.update();
 			});
 
-			extma2Container.setLong("EXMERE", OCHN);
+			extma2Container.setLong("EXMERE", NCHN);
 			if(!extma2Record.readLock(extma2Container, { LockedResult updatedRecord ->
 						updatedRecord.setDouble("EXREQT",  mwomatData.getDouble("VMREQT") + updatedRecord.getDouble("EXREQT"));
 						updateTrackingField(updatedRecord, "EX");
