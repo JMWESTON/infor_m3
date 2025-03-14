@@ -85,15 +85,12 @@ public class AgregMat extends ExtendM3Transaction {
 			}
 		}
 
-		
-			ExpressionFactory mwohedExpressionFactory = database.getExpressionFactory("MMOPLP");
-			mwohedExpressionFactory =  mwohedExpressionFactory.eq("VHSCHN",MERE.toString());
-		DBAction mwohedRecord = database.table("MWOHED").index("00").matching(mwohedExpressionFactory).build();
+		DBAction mwohedRecord = database.table("MWOHED").index("65").build();
 		DBContainer mwohedContainer = mwohedRecord.createContainer();
 		mwohedContainer.setInt("VHCONO", CONO);
 		mwohedContainer.setString("VHFACI", FACI);
-		int nbOf = mwohedRecord.readAll(mwohedContainer,2, 1000,{});
-
+		mwohedContainer.setLong("VHSCHN", MERE)
+		int nbOf = mwohedRecord.readAll(mwohedContainer,3, 1000,{});
 
 		int nbMat = 1;
 		String plgr ="";
