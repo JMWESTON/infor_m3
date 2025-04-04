@@ -1,4 +1,5 @@
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 /**
  * README
  *
@@ -6,6 +7,7 @@ import java.time.LocalDate
  * Description: regroupe POF des articles Fashion sur des notes mères
  * Date                         Changed By                         Description
  * 20240711                     ddecosterd@hetic3.fr     	création
+ * 20250404						ddecosterd@hetic3.fr		fix initialisation of corresFomrStock, limit read of MMOPLP to one year, in functiond getNPPN and getNSPN replace MMTPLI value with MMHDPR, add missing prefixForm in getNSPN, Remove execution limitation after 2025-06-03.
  */
 
 public class EXT003 extends ExtendM3Batch {
@@ -17,10 +19,11 @@ public class EXT003 extends ExtendM3Batch {
 
 	private String errorMessage = "";
 
+	private String prefixForm = "";
 	private boolean capping = false;
 	private int defaultNPPN = 10;
 	private int defaultNSPN = 3;
-	private List<double[]> corresFomrStock = [];
+	private List<Double[]> corresFomrStock = new ArrayList<Double[]>();
 
 	public EXT003(ProgramAPI program, DatabaseAPI database, UtilityAPI utility, MICallerAPI miCaller, LoggerAPI logger) {
 		this.program = program;
@@ -32,11 +35,6 @@ public class EXT003 extends ExtendM3Batch {
 
 	public void main() {
 
-		if (LocalDate.now().isAfter(LocalDate.of(2025, 6, 3))){
-			logger.debug("Extension signature expired");
-			return
-		}
-		
 		Integer cono = program.getLDAZD().CONO;
 
 		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1A030","F1CHB1","F1CHB2").build();
@@ -45,13 +43,15 @@ public class EXT003 extends ExtendM3Batch {
 		cugex1Container.setString("F1FILE", "BATCH");
 		cugex1Container.setString("F1PK01", "EXT003");
 
-		if(!cugex1Record.read(cugex1Container))
-		return;
+		if(!cugex1Record.read(cugex1Container)) {
+			logger.error("Batch configuration missing");
+			return;
+		}
 
 		String  faci = cugex1Container.getString("F1A030");
 
 		if(!checkInputs(cono, faci))
-		return;
+			return;
 
 		init(cono);
 
@@ -213,25 +213,28 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param cono
 	 */
 	private void init(int cono) {
-		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196","F1CHB1").build();
+		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1A030","F1N096","F1N196","F1CHB1").build();
 		DBContainer cugex1Container = cugex1Record.createContainer();
 		cugex1Container.setInt("F1CONO", cono);
 		cugex1Container.setString("F1FILE", "EXT003");
 		cugex1Container.setString("F1PK01", "DEFAUT");
 		if(cugex1Record.read(cugex1Container)) {
+			prefixForm = cugex1Container.getString("F1A030");
 			capping = cugex1Container.getInt("F1CHB1") == 1;
 			defaultNPPN = cugex1Container.get("F1N096");
 			defaultNSPN = cugex1Container.get("F1N196");
 		}
 
-		ExpressionFactory CUGEXExpressionFactory = database.getExpressionFactory("CUGEX1");
-		CUGEXExpressionFactory =  CUGEXExpressionFactory.between("F1PK02","10","100");
-		cugex1Record = database.table("CUGEX1").index("00").matching(CUGEXExpressionFactory).selection("F1N096","F1N196").build();
+		cugex1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196").build();
 		cugex1Container = cugex1Record.createContainer();
+		cugex1Container.setInt("F1CONO", cono);
 		cugex1Container.setString("F1FILE", "EXT003");
 		cugex1Container.setString("F1PK01", "FORMESTOCK");
-		cugex1Record.readAll(cugex1Container, 2, 30, {
-			corresFomrStock.push([cugex1Container.getDouble("F1N096"),cugex1Container.getDouble("F1N196")] as double[]);
+		cugex1Record.readAll(cugex1Container, 3, 30, { DBContainer cugex1Data ->
+			Double[] val = new Double[2];
+			val[0] = cugex1Data.getDouble("F1N096");
+			val[1] = cugex1Data.getDouble("F1N196");
+			corresFomrStock.add(val);
 		});
 	}
 
@@ -269,9 +272,11 @@ public class EXT003 extends ExtendM3Batch {
 		boolean noError = true;
 		String prno = "";
 		int read = 10000;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+		LocalDate dateLimite = LocalDate.now().plusYears(1);
 		while(read == 10000) {
 			ExpressionFactory mmoplpExpressionFactory = database.getExpressionFactory("MMOPLP");
-			mmoplpExpressionFactory =  mmoplpExpressionFactory.ne("ROHDPR","").and(mmoplpExpressionFactory.ge("ROPRNO",prno));
+			mmoplpExpressionFactory =  mmoplpExpressionFactory.ne("ROHDPR","").and(mmoplpExpressionFactory.ge("ROPRNO",prno)).and(mmoplpExpressionFactory.le("ROSTDT", dateLimite.format(formatter)));
 
 			DBAction mmoplpRecord = database.table("MMOPLP").index("85").matching(mmoplpExpressionFactory).selection("ROCONO","ROFACI","ROHDPR","ROPRNO","ROPLPN","ROPLDT").build();
 			DBContainer mmoplpContainer = mmoplpRecord.createContainer();
@@ -302,7 +307,7 @@ public class EXT003 extends ExtendM3Batch {
 			Closure<String> mmoplpClosure = { DBContainer MMOPLPdata ->
 				int nppn = 0;
 				int nspn = 0;
-				DBAction itmasRecord = database.table("MITMAS").index("00").selection("MMGRP1","MMGRP2","MMGRP3","MMTPLI","MMHDPR","MMGRTI").build();
+				DBAction itmasRecord = database.table("MITMAS").index("00").selection("MMGRP1","MMGRP2","MMGRP3","MMHDPR","MMGRTI").build();
 				DBContainer itmasContainer = itmasRecord.createContainer();
 				itmasContainer.setInt("MMCONO", cono);
 				itmasContainer.setString("MMITNO", MMOPLPdata.getString("ROPRNO"));
@@ -318,9 +323,9 @@ public class EXT003 extends ExtendM3Batch {
 				itmahContainer.setString("HMITNO", MMOPLPdata.getString("ROPRNO"));
 				if(itmahRecord.read(itmahContainer)) {
 
-					nppn = getNPPN(cono, itmasContainer.getString("MMTPLI"), itmasContainer.getString("MMGRP1"), itmasContainer.getString("MMGRP2"), itmasContainer.getString("MMGRP3"),
+					nppn = getNPPN(cono, itmasContainer.getString("MMHDPR"), itmasContainer.getString("MMGRP1"), itmasContainer.getString("MMGRP2"), itmasContainer.getString("MMGRP3"),
 							itmasContainer.getString("MMGRTI"));
-					nspn = getNSPN(cono, MMOPLPdata.getString("ROPRNO"), itmasContainer.getString("MMTPLI"), itmasContainer.getString("MMHDPR"), itmahContainer.getString("HMTX15"),
+					nspn = getNSPN(cono, MMOPLPdata.getString("ROPRNO"), itmasContainer.getString("MMHDPR"), itmahContainer.getString("HMTX15"),
 							itmahContainer.getString("HMTY15"), itmasContainer.getString("MMGRTI"));
 
 					DBAction wr0Record = database.table("EXTWR0").index("00").build();
@@ -359,7 +364,7 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param grti
 	 * @return nombre d'OF maxi par note.
 	 */
-	private int getNPPN(Integer cono, String tpli, String grp1, String grp2, String grp3, String grti) {
+	private int getNPPN(Integer cono, String hdpr, String grp1, String grp2, String grp3, String grti) {
 		int nppn = 0;
 
 		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196").build();
@@ -368,7 +373,7 @@ public class EXT003 extends ExtendM3Batch {
 		cugex1Container.setString("F1FILE", "EXT003");
 		cugex1Container.setString("F1PK01",  'NPPN');
 		cugex1Container.setString("F1PK02",  'STYLE');
-		cugex1Container.setString("F1PK03", tpli );
+		cugex1Container.setString("F1PK03", hdpr );
 		if(cugex1Record.read(cugex1Container)) {
 			nppn = cugex1Container.get("F1N096");
 		}
@@ -387,7 +392,7 @@ public class EXT003 extends ExtendM3Batch {
 				nppn = cugex1Container.get("F1N096");
 			}
 		}
-		cugex1Container.setString("F1PK04", "" );
+		cugex1Container.clear("F1PK04");
 		if(nppn == 0) {
 			cugex1Container.setString("F1PK02",  'FORME');
 			cugex1Container.setString("F1PK03", grp1 );
@@ -420,7 +425,7 @@ public class EXT003 extends ExtendM3Batch {
 	 * @param grti
 	 * @return nombre de SKU identique par note.
 	 */
-	private int getNSPN(Integer cono, String prno, String tpli, String hdpr, String TX15, String TY15, String grti) {
+	private int getNSPN(Integer cono, String prno, String hdpr, String TX15, String TY15, String grti) {
 		int nspn = 0;
 		DBAction cugex1Record = database.table("CUGEX1").index("00").selection("F1N096","F1N196").build();
 		DBContainer cugex1Container = cugex1Record.createContainer();
@@ -434,7 +439,7 @@ public class EXT003 extends ExtendM3Batch {
 		}
 		if(nspn == 0) {
 			cugex1Container.setString("F1PK02",  'STYLE');
-			cugex1Container.setString("F1PK03", tpli );
+			cugex1Container.setString("F1PK03", hdpr );
 			if(cugex1Record.read(cugex1Container)) {
 				nspn = cugex1Container.get("F1N096");
 			}
@@ -449,7 +454,7 @@ public class EXT003 extends ExtendM3Batch {
 				DBContainer mitbalContainer = mitbalRecord.createContainer();
 				mitbalContainer.setInt("MBCONO", cono);
 				mitbalContainer.setString("MBWHLO", "FMA");
-				mitbalContainer.setString("MBITNO", hdpr.substring(0, 5)+mitmasContainer.getString("MMGRP1")+"STD"+TX15+TY15);
+				mitbalContainer.setString("MBITNO", prefixForm+"_"+ hdpr.substring(0, 5)+mitmasContainer.getString("MMGRP1")+"_STD"+TX15+TY15);
 				if(mitbalRecord.read(mitbalContainer)) {
 					double stock = mitbalContainer.getDouble("MBSTQT");
 					for(corres in corresFomrStock) {
