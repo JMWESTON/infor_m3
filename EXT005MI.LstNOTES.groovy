@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter
  * Description: Liste les notes mères
  * Date                         Changed By                         Description
  * 20240216                     ddecosterd@hetic3.fr     	création
+ * 20250409						ddecosterd@hetic3.fr		increase limit to 10000 of MWOOPE readall
  */
 public class LstNOTES extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -124,14 +125,14 @@ public class LstNOTES extends ExtendM3Transaction {
 	private void fillTR1(int cono, String faci, String plgr) {
 		ExpressionFactory mwoopeExpressionFactory = database.getExpressionFactory("MWOOPE");
 		mwoopeExpressionFactory = mwoopeExpressionFactory.gt("VOSCHS", "0");
-		
+
 		DBAction mwoopeRecord = database.table("MWOOPE").index("95").matching(mwoopeExpressionFactory).selection("VOPRNO", "VOMFNO", "VOOPNO", "VOSTDT","VOSCHS", "VOSCHN", "VOWOST").build();
 		DBContainer mwoopeContainer = mwoopeRecord.createContainer();
 		mwoopeContainer.setInt("VOCONO", cono);
 		mwoopeContainer.setString("VOFACI", faci);
 		mwoopeContainer.setString("VOPLGR", plgr);
 
-		mwoopeRecord.readAll(mwoopeContainer, 3, 1000, { DBContainer mwoopeData ->
+		mwoopeRecord.readAll(mwoopeContainer, 3, 10000, { DBContainer mwoopeData ->
 			insertUpdateDelExttr1(cono, faci, plgr, mwoopeData);
 		});
 
@@ -242,14 +243,9 @@ public class LstNOTES extends ExtendM3Transaction {
 	 * @param cono
 	 * @param faci
 	 * @param plgr
-	 * @param lastUpd the date of the last execution of EXT001
-	 * @param sourceTable the table between EXT002 and EXT003 the most up-to-date
-	 * @param schsFilter if we want to filter SCHS equal to zero
 	 * @return
 	 */
 	private liste(int cono, String faci, String plgr) {
-		ExpressionFactory exttr1ExpressionFactory = database.getExpressionFactory("EXTTR1");
-		exttr1ExpressionFactory = exttr1ExpressionFactory.ne("EXSCHS", "0");
 		DBAction exttr1Record = database.table("EXTTR1").index("00").selection("EXWOST","EXSCHS","EXGRP1","EXGRP2","EXGRP3","EXGRP4","EXGRP5","EXTIGE","EXSTDT","EXITDS").build();
 		DBContainer exttr1Container = exttr1Record.createContainer();
 		exttr1Container.setInt("EXCONO", cono);
