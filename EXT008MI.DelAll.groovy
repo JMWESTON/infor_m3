@@ -47,9 +47,7 @@ public class DELALL extends ExtendM3Transaction {
 			nbKeys = 3;
 		}
 
-		int nrOfRecords = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000? 10000: mi.getMaxRecords();
-
-		int deleted = ext008Record.readAll(ext008Container,nbKeys, nrOfRecords, { DBContainer container ->
+		int deleted = ext008Record.readAll(ext008Container,nbKeys, 10000, { DBContainer container ->
 			ext008Record.readLock(container, { LockedResult lockedResult ->
 				lockedResult.delete();
 			});
