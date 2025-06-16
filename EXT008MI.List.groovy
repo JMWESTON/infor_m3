@@ -23,7 +23,9 @@ public class LIST extends ExtendM3Transaction {
 	public void main() {
 		Integer cono = mi.in.get("CONO");
 		String  faci = (mi.inData.get("FACI") == null) ? "" : mi.inData.get("FACI").trim();
+		Long mere = mi.in.get("MERE");
 		String  plgr = (mi.inData.get("PLGR") == null) ? "" : mi.inData.get("PLGR").trim();
+		Integer bipe = mi.in.get("BIPE");
 
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
@@ -35,23 +37,39 @@ public class LIST extends ExtendM3Transaction {
 			return;
 		}
 
-		if(plgr.isBlank()) {
-			mi.error("Le code PLGR est obligatoire.");
+		if(!plgr.isBlank() && mere != null) {
+			mi.error("Les champs PLGR et MERE ne peuvent être renseignés en même temps.");
 			return;
 		}
 
-		DBAction ext008Record = database.table("EXT008").index("10").selection("EXSTYL","EXITDS","EXTYPE","EXNBOF","EXPRIO","EXSORT").build();
+		int nbKeys = 2;
+		if(!plgr.isBlank() || !mere != null) {
+			nbKeys++;
+		}
+
+		String index = "00";
+		if(!plgr.isBlank()) {
+			index = "10";
+		}
+
+		ExpressionFactory ext008ExpressionFactory = database.getExpressionFactory("EXT008");
+		if(bipe != null && bipe >= 0 && bipe <= 1)
+			ext008ExpressionFactory = ext008ExpressionFactory.eq("EXBIPE", bipe.toString());
+		DBAction ext008Record = database.table("EXT008").index(index).matching(ext008ExpressionFactory).selection("EXSTYL","EXITDS","EXTYPE","EXNBOF","EXPRIO","EXSORT","EXBIPE").build();
 		DBContainer ext008Container = ext008Record.createContainer();
 		ext008Container.setInt("EXCONO", cono);
 		ext008Container.setString("EXFACI", faci);
-		ext008Container.setString("EXPLGR", plgr);
+		if(!plgr.isBlank())
+			ext008Container.setString("EXPLGR", plgr);
+		if(mere != null)
+			ext008Container.setLong("EXMERE", mere);
 
 		int nrOfRecords = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000? 10000: mi.getMaxRecords();
 
-		ext008Record.readAll(ext008Container, 3, nrOfRecords,{ DBContainer container ->
+		ext008Record.readAll(ext008Container, nbKeys, nrOfRecords,{ DBContainer container ->
 			mi.getOutData().put("CONO", cono.toString());
 			mi.getOutData().put("FACI",faci);
-			mi.getOutData().put("PLGR", plgr);
+			mi.getOutData().put("PLGR", container.getString("EXPLGR"));
 			mi.getOutData().put("MERE",container.get("EXMERE").toString());
 			mi.getOutData().put("STYL", container.getString("EXSTYL"));
 			mi.getOutData().put("ITDS",container.getString("EXITDS"));
@@ -59,6 +77,7 @@ public class LIST extends ExtendM3Transaction {
 			mi.getOutData().put("NBOF", container.get("EXNBOF").toString());
 			mi.getOutData().put("PRIO", container.get("EXPRIO").toString());
 			mi.getOutData().put("SORT", container.get("EXSORT").toString());
+			mi.getOutData().put("BIPE", container.get("EXBIPE").toString());
 			mi.write();
 		});
 	}

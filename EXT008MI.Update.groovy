@@ -31,6 +31,7 @@ public class UPDATE extends ExtendM3Transaction {
 		Integer nbof = mi.in.get("NBOF");
 		Integer prio = mi.in.get("PRIO");
 		Integer sort = mi.in.get("SORT");
+		Integer bipe = mi.in.get("BIPE");
 
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
@@ -52,11 +53,22 @@ public class UPDATE extends ExtendM3Transaction {
 			return;
 		}
 
-		DBAction ext008Record = database.table("EXT008").index("00").build();
+		if( prio != null && (prio < 0 || prio > 9)) {
+			mi.error("La valeur du champ PRIO doit être compris entre 0 et 9.");
+			return;
+		}
+
+		if( bipe != null && (bipe < 0 || bipe > 1)) {
+			mi.error("La valeur du champ BIPE doit être compris entre 0 et 1.");
+			return;
+		}
+
+		DBAction ext008Record = database.table("EXT008").index("00").selection("EXCHNO").build();
 		DBContainer ext008Container = ext008Record.createContainer();
 		ext008Container.setInt("EXCONO", cono);
 		ext008Container.setString("EXFACI", faci);
 		ext008Container.setLong("EXMERE", mere);
+		ext008Container.setString("EXPLGR", plgr);
 
 		boolean updatable = ext008Record.readLock(ext008Container, { LockedResult updateRecoord ->
 			updateRecoord.setString("EXPLGR", plgr);
@@ -69,6 +81,8 @@ public class UPDATE extends ExtendM3Transaction {
 				updateRecoord.setInt("EXPRIO", prio);
 			if(sort != null)
 				updateRecoord.setInt("EXSORT", sort);
+			if(bipe != null)
+				updateRecoord.setInt("EXBIPE", bipe);
 			int CHNO = updateRecoord.getInt("EXCHNO");
 			if(CHNO== 999) {CHNO = 0;}
 			CHNO++;

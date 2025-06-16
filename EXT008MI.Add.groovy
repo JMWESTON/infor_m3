@@ -23,14 +23,15 @@ public class ADD extends ExtendM3Transaction {
 	public void main() {
 		Integer cono = mi.in.get("CONO");
 		String  faci = (mi.inData.get("FACI") == null) ? "" : mi.inData.get("FACI").trim();
-		String  plgr = (mi.inData.get("PLGR") == null) ? "" : mi.inData.get("PLGR").trim();
 		Long mere = mi.in.get("MERE");
+		String  plgr = (mi.inData.get("PLGR") == null) ? "" : mi.inData.get("PLGR").trim();
 		String  styl = (mi.inData.get("STYL") == null) ? "" : mi.inData.get("STYL").trim();
 		String  itds = (mi.inData.get("ITDS") == null) ? "" : mi.inData.get("ITDS").trim();
 		String  type = (mi.inData.get("TYPE") == null) ? "" : mi.inData.get("TYPE").trim();
 		Integer nbof = mi.in.get("NBOF");
 		Integer prio = mi.in.get("PRIO");
 		Integer sort = mi.in.get("SORT");
+		Integer bipe = mi.in.get("BIPE");
 
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
@@ -69,6 +70,16 @@ public class ADD extends ExtendM3Transaction {
 			return;
 		}
 
+		if( prio != null && (prio < 0 || prio > 9)) {
+			mi.error("La valeur du champ PRIO doit être compris entre 0 et 9.");
+			return;
+		}
+
+		if( bipe != null && (bipe < 0 || bipe > 1)) {
+			mi.error("La valeur du champ BIPE doit être compris entre 0 et 1.");
+			return;
+		}
+
 		DBAction ext008Record = database.table("EXT008").index("00").build();
 		DBContainer ext008Container = ext008Record.createContainer();
 		ext008Container.setInt("EXCONO", cono);
@@ -86,6 +97,8 @@ public class ADD extends ExtendM3Transaction {
 				ext008Container.setInt("EXPRIO", prio);
 			if(sort != null)
 				ext008Container.setInt("EXSORT", sort);
+			if(bipe != null)
+				ext008Container.setInt("EXBIPE", bipe);
 			ext008Container.set("EXRGDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
 			ext008Container.set("EXLMDT", (Integer) utility.call("DateUtil", "currentDateY8AsInt"));
 			ext008Container.set("EXCHID", program.getUser());
