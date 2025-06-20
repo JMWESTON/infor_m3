@@ -67,6 +67,10 @@ public class GET extends ExtendM3Transaction {
 			mi.getOutData().put("BIPE", ext008Container.get("EXBIPE").toString())
 			mi.write();
 		}
+		else{
+			mi.error("Enregistrement inexistant !");
+			return;
+		}
 	}
 
 }
