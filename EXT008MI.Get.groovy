@@ -64,7 +64,7 @@ public class GET extends ExtendM3Transaction {
 			mi.getOutData().put("NBOF", ext008Container.get("EXNBOF").toString());
 			mi.getOutData().put("PRIO", ext008Container.get("EXPRIO").toString());
 			mi.getOutData().put("SORT", ext008Container.get("EXSORT").toString());
-			mi.getOutData().put("BIPE", ext008Container.get("EXBIPE").toString())
+			mi.getOutData().put("BIPE", ext008Container.get("EXBIPE").toString());
 			mi.write();
 		}
 		else{
