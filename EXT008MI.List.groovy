@@ -1,8 +1,7 @@
-
 /**
  * README
- *
- * Name: EXT008MI.List
+ * Type: ExtendM3Transaction
+ * Name: EXT008MI.LIST
  * Description: list records in EXT008
  * Date                         Changed By                    Description
  * 20250604                     ddecosterd@hetic3.fr     		création
@@ -13,6 +12,13 @@ public class LIST extends ExtendM3Transaction {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 
+	/*
+	 * Transaction EXT008MI/LIST Interface
+	 * @param mi - Infor MI Interface
+	 * @param program - Infor Program API
+	 * @param database - Infor Database Interface
+	 * @param utility - Utility
+	 */
 	public LIST(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
 		this.mi = mi;
 		this.program = program;
@@ -43,8 +49,12 @@ public class LIST extends ExtendM3Transaction {
 		}
 
 		int nbKeys = 2;
-		if(!plgr.isBlank() || !mere != null) {
-			nbKeys++;
+		if(plgr.isBlank() && mere == null) {
+
+		}else {
+			if(!plgr.isBlank() || !mere != null) {
+				nbKeys++;
+			}
 		}
 
 		String index = "00";

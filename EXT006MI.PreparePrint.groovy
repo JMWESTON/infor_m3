@@ -5,6 +5,7 @@
  * Description: Prépare les données pour l'impression
  * Date                         Changed By                         Description
  * 20240417                     ddecosterd@hetic3.fr     	création
+ * 20250610						ddecosterd@hetic3.fr		fix calculation of totalSchn, totalPuno and totalResp
  */
 public class PreparePrint extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -91,13 +92,14 @@ public class PreparePrint extends ExtendM3Transaction {
 				schn = extetqData.getLong("EXSCHN");
 			}
 
-			totalSchn++;
-			totalPuno++;
-			totalResp++;
-
 			nbet = extetqData.getInt("EXNBET");
 			while (nbet > 0) {
 				totalEtiq++;
+				
+				totalSchn++;
+				totalPuno++;
+				totalResp++;
+
 				panr = String.format("%010d",BJNO)+String.format("%010d",totalEtiq);
 				if(!addMPTRNS(CONO, extetqData.getString("EXITNO"), puno, extetqData.getString("EXMFNO"), schn, resp, panr, 1, "ITNO", extetqData.getString("EXCFI3"))) {
 					return;
