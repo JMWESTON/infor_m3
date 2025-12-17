@@ -1,7 +1,6 @@
-
 /**
  * README
- *
+ * Type: ExtendM3Transaction
  * Name: EXT008MI.Update
  * Description: Update a record in EXT008
  * Date                         Changed By                    Description
@@ -13,6 +12,13 @@ public class UPDATE extends ExtendM3Transaction {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 
+	/*
+	 * Transaction EXT008MI/UPDATE Interface
+	 * @param mi - Infor MI Interface
+	 * @param program - Infor Program API
+	 * @param database - Infor Database Interface
+	 * @param utility - Utility
+	 */
 	public UPDATE(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
 		this.mi = mi;
 		this.program = program;
@@ -71,7 +77,6 @@ public class UPDATE extends ExtendM3Transaction {
 		ext008Container.setString("EXPLGR", plgr);
 
 		boolean updatable = ext008Record.readLock(ext008Container, { LockedResult updateRecoord ->
-			updateRecoord.setString("EXPLGR", plgr);
 			updateRecoord.setString("EXSTYL", styl);
 			updateRecoord.setString("EXITDS", itds);
 			updateRecoord.setString("EXTYPE", type);

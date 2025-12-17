@@ -1,7 +1,7 @@
 
 /**
  * README
- *
+ * Type: ExtendM3Transaction
  * Name: EXT008MI.Get
  * Description: get a record in EXT008
  * Date                         Changed By                    Description
@@ -12,7 +12,14 @@ public class GET extends ExtendM3Transaction {
 	private final ProgramAPI program;
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
-
+	
+	/*
+	 * Transaction EXT008MI/UPDATE Interface
+	 * @param mi - Infor MI Interface
+	 * @param program - Infor Program API
+	 * @param database - Infor Database Interface
+	 * @param utility - Utility
+	 */
 	public GET(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
 		this.mi = mi;
 		this.program = program;

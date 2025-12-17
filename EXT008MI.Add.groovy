@@ -1,7 +1,6 @@
-
 /**
  * README
- *
+ * Type : ExtendM3Transaction
  * Name: EXT008MI.Add
  * Description: Add a record in EXT008
  * Date                         Changed By                    Description
@@ -13,6 +12,13 @@ public class ADD extends ExtendM3Transaction {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 
+	/*
+	 * Transaction EXT008MI/ADD Interface
+	 * @param mi - Infor MI Interface
+	 * @param program - Infor Program API
+	 * @param database - Infor Database Interface
+	 * @param utility - Utility
+	 */
 	public ADD(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
 		this.mi = mi;
 		this.program = program;

@@ -1,7 +1,6 @@
-
 /**
  * README
- *
+ * Type: ExtendM3Transaction
  * Name: EXT008MI.DelAll
  * Description: Del all records in EXT008
  * Date                         Changed By                    Description
@@ -13,6 +12,13 @@ public class DELALL extends ExtendM3Transaction {
 	private final DatabaseAPI database;
 	private final UtilityAPI utility;
 
+	/*
+	 * Transaction EXT008MI/DELALL Interface
+	 * @param mi - Infor MI Interface
+	 * @param program - Infor Program API
+	 * @param database - Infor Database Interface
+	 * @param utility - Utility
+	 */
 	public DELALL(MIAPI mi, ProgramAPI program, DatabaseAPI database, UtilityAPI utility) {
 		this.mi = mi;
 		this.program = program;
@@ -23,8 +29,7 @@ public class DELALL extends ExtendM3Transaction {
 	public void main() {
 		Integer cono = mi.in.get("CONO");
 		String  faci = (mi.inData.get("FACI") == null) ? "" : mi.inData.get("FACI").trim();
-		String  plgr = (mi.inData.get("PLGR") == null) ? "" : mi.inData.get("PLGR").trim();
-
+		Long mere = mi.in.get("MERE");
 		if(cono == null) {
 			mi.error("La division est obligatoire.");
 			return;
@@ -42,18 +47,19 @@ public class DELALL extends ExtendM3Transaction {
 		ext008Container.setInt("EXCONO", cono);
 		ext008Container.setString("EXFACI", faci);
 
-		if(!plgr.isBlank()) {
-			ext008Container.setString("EXPLGR", plgr);
+		if(!mere == null) {
+			ext008Container.setLong("EXMERE", mere);
 			nbKeys = 3;
 		}
 
 		int deleted = ext008Record.readAll(ext008Container,nbKeys, 10000, { DBContainer container ->
 			ext008Record.readLock(container, { LockedResult lockedResult ->
+			
 				lockedResult.delete();
 			});
 		});
-
 		mi.getOutData().put("NDEL", deleted.toString());
+		mi.write();
 	}
 
 }
