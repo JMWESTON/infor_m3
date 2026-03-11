@@ -6,6 +6,7 @@
  * Description: get a record in EXT008
  * Date                         Changed By                    Description
  * 20250604                     ddecosterd@hetic3.fr     		création
+ * 20250708                     aferre@hetic3.fr                Add missing comment
  */
 public class GET extends ExtendM3Transaction {
 	private final MIAPI mi;
