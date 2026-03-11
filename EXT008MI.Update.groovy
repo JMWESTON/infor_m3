@@ -5,6 +5,7 @@
  * Description: Update a record in EXT008
  * Date                         Changed By                    Description
  * 20250604                     ddecosterd@hetic3.fr     		création
+ * 20250708                     aferre@hetic3.fr                Remove PLGR from values to update. Add missing comment
  */
 public class UPDATE extends ExtendM3Transaction {
 	private final MIAPI mi;
