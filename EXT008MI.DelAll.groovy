@@ -5,6 +5,7 @@
  * Description: Del all records in EXT008
  * Date                         Changed By                    Description
  * 20250604                     ddecosterd@hetic3.fr     		création
+ * 20250708                     aferre@hetic3.fr                Replace parameter PLGR by MERE. Add missing mi.write(). Add missing comment
  */
 public class DELALL extends ExtendM3Transaction {
 	private final MIAPI mi;
