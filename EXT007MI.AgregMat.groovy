@@ -7,6 +7,7 @@
  * 20250203                     ddecosterd@hetic3.fr     		création
  * 20250221						ddecosterd@hetic3.fr		fix CHNO not updated, EXNBMA value when the record is created. Add filter on SPMT.
  * 20250306						ddecosterd@hetic3.fr		Add number of manufacture order for a SCHN. Reset nbMat on change of PLGR. Remove the insert of material with SPMT != 2.
+ * 20251030						ddecosterd@hetic3.fr		Fix wrong index on EXTMA1 in if(NDEL == 1) block (from 00 to 10) and raise from 100 to 1000 loop on EXTMA2.
  */
 public class AgregMat extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -56,7 +57,7 @@ public class AgregMat extends ExtendM3Transaction {
 		}
 
 		if(NDEL == 1) {
-			DBAction extma1Record = database.table("EXTMA1").index("00").selection("EXPLGR","EXOPNO","EXCHNO").build();
+			DBAction extma1Record = database.table("EXTMA1").index("10").selection("EXPLGR","EXOPNO","EXCHNO").build();
 			DBContainer extma1Container = extma1Record.createContainer();
 			extma1Container.setInt("EXCONO", CONO);
 			extma1Container.setString("EXFACI", FACI);
@@ -94,7 +95,7 @@ public class AgregMat extends ExtendM3Transaction {
 
 		int nbMat = 1;
 		String plgr ="";
-		exmat2Record.readAll(exmat2Container, nbKeys, 100, {  DBContainer extma2Data ->
+		exmat2Record.readAll(exmat2Container, nbKeys, 1000, {  DBContainer extma2Data ->
 			DBAction extma1Record = database.table("EXTMA1").index("00").build();
 			DBContainer extma1Container = extma1Record.createContainer();
 			extma1Container.setInt("EXCONO", extma2Data.getInt("EXCONO"));
