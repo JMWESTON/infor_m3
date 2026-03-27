@@ -6,6 +6,7 @@
  * Date                         Changed By                         Description
  * 20240116                     ddecosterd@hetic3.fr     	création
  * 20241210                     ddecosterd@hetic3.fr     	code review
+ * 20260327                     ddecosterd@hetic3.fr     	add fields VOCHNO and VMCHNO to table selection.
  */
 public class AddSCHN extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -152,7 +153,7 @@ public class AddSCHN extends ExtendM3Transaction {
 	 */
 	private boolean updateMwoopeSCHN(DBAction mwoopeRecord, DBContainer mwoopeContainer, Long schn) {
 		Closure<?> mwoopeClosure= { DBContainer MWOOPEdata ->
-			DBAction update = database.table("MWOOPE").index("00").build();
+			DBAction update = database.table("MWOOPE").index("00").selection("VOCHNO").build();
 			DBContainer MWOOPErecord = update.createContainer();
 			MWOOPErecord.set("VOCONO", MWOOPEdata.get("VOCONO"));
 			MWOOPErecord.set("VOFACI", MWOOPEdata.get("VOFACI"));
@@ -184,7 +185,7 @@ public class AddSCHN extends ExtendM3Transaction {
 		DBAction mwomatRecord = database.table("MWOMAT").index("10").build();
 
 		Closure<?> mwomatClosure= { DBContainer MWOMATdata ->
-			DBAction update = database.table("MWOMAT").index("10").build();
+			DBAction update = database.table("MWOMAT").index("10").selection("VMCHNO").build();
 			DBContainer MWOMATrecord = update.createContainer();
 			MWOMATrecord.set("VMCONO", MWOMATdata.get("VMCONO"));
 			MWOMATrecord.set("VMFACI", MWOMATdata.get("VMFACI"));
