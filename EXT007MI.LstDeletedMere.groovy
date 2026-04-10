@@ -8,6 +8,7 @@
  Revision History:
  Name                    Date             Version          Description of Changes
  d.decosterd@hetic3.fr   2025-02-20       1.0              Creation
+ d.decosterd@hetic3.fr    2026-04-10       1.1             Limit number of read record to 10000. Add an in parameter "mere" for start value. Add an out parameter to know if we have reaad all the records. 
  ******************************************************************************************/
 public class LstDeletedMere extends ExtendM3Transaction {
 	private final MIAPI mi;
@@ -26,9 +27,11 @@ public class LstDeletedMere extends ExtendM3Transaction {
 	public void main() {
 		Integer cono = mi.in.get("CONO");
 		String  faci = (mi.inData.get("FACI") == null) ? "" : mi.inData.get("FACI").trim();
+		Long mere = mi.in.get("MERE");
 
-		Long mere = 0;
-		DBAction extma1Record = database.table("EXTMA1").index("10").selection("EXMERE").build();
+		ExpressionFactory extmat1ExpressionFactory = database.getExpressionFactory("EXTMA1");
+		extmat1ExpressionFactory = extmat1ExpressionFactory.gt("EXMERE", mere.toString());
+		DBAction extma1Record = database.table("EXTMA1").index("10").matching(extmat1ExpressionFactory).selection("EXMERE").build();
 		DBContainer extma1Container = extma1Record.createContainer();
 		extma1Container.setInt("EXCONO", cono);
 		extma1Container.setString("EXFACI", faci);
@@ -37,7 +40,7 @@ public class LstDeletedMere extends ExtendM3Transaction {
 		});
 
 		int nrOfRecords = 0;
-		int nrMaxOfRecords = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 10000? 10000: mi.getMaxRecords();
+		int nrMaxOfRecords = mi.getMaxRecords() <= 0 || mi.getMaxRecords() >= 5000? 5000: mi.getMaxRecords();
 
 		while(readExtma1 != 0 && nrOfRecords < nrMaxOfRecords) {
 			DBAction mwohedRecord = database.table("MWOHED").index("65").build();
@@ -48,21 +51,32 @@ public class LstDeletedMere extends ExtendM3Transaction {
 
 			int read = mwohedRecord.readAll(mwohedContainer, 3, 1, {});
 			if(read == 0) {
-				nrOfRecords ++;
 				mi.getOutData().put("CONO", cono.toString());
 				mi.getOutData().put("FACI", faci.toString());
 				mi.getOutData().put("MERE", mere.toString());
+				mi.getOutData().put("PART", "0");
 				mi.write();
 			}
-			ExpressionFactory extmat1ExpressionFactory = database.getExpressionFactory("EXTMA1");
-			extmat1ExpressionFactory = extmat1ExpressionFactory.gt("EXMERE", mere.toString());
-			extma1Record = database.table("EXTMA1").index("10").matching(extmat1ExpressionFactory).selection("EXMERE").build();
-			extma1Container = extma1Record.createContainer();
-			extma1Container.setInt("EXCONO", cono);
-			extma1Container.setString("EXFACI", faci);
-			readExtma1 = extma1Record.readAll(extma1Container, 2, 1, { DBContainer extma1Data ->
-				mere = extma1Data.getLong("EXMERE");
-			});
+
+			nrOfRecords ++;
+			if(nrOfRecords < nrMaxOfRecords) {
+				extmat1ExpressionFactory = extmat1ExpressionFactory.gt("EXMERE", mere.toString());
+				extma1Record = database.table("EXTMA1").index("10").matching(extmat1ExpressionFactory).selection("EXMERE").build();
+				extma1Container = extma1Record.createContainer();
+				extma1Container.setInt("EXCONO", cono);
+				extma1Container.setString("EXFACI", faci);
+				readExtma1 = extma1Record.readAll(extma1Container, 2, 1, { DBContainer extma1Data ->
+					mere = extma1Data.getLong("EXMERE");
+				});
+			}
+		}
+
+		if(readExtma1 != 0) {
+			mi.getOutData().put("CONO", cono.toString());
+			mi.getOutData().put("FACI", faci.toString());
+			mi.getOutData().put("MERE", mere.toString());
+			mi.getOutData().put("PART", "1");
+			mi.write();
 		}
 	}
 }
